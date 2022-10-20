@@ -1,0 +1,5 @@
+{:weight    3
+ :items #{[1 "za duże"  4 10]
+          [2 "małe"  1 5]
+          [3 "średnie"  2 5]
+          [4 "duże"  3 8]}}
