@@ -7,6 +7,6 @@
                  weight
                  value])
 (let [main-data (-> "resources/data.edn" slurp edn/read-string)]
-  (def total-weight (:weight main-data))
+  (def max-weight (:weight main-data))
   (def items (map (partial apply ->item) (:items main-data)))
   (def len (count items)))

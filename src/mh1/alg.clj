@@ -5,20 +5,20 @@
             [incanter.charts :refer :all]
             [incanter.io :refer :all]))
 
-(defrecord specimen [choices score])                      ; the thing we are evolving
+(defrecord specimen [choices weight value valid])                      ; the thing we are evolving
 
 (def ^:dynamic point-mutation)
 (def ^:dynamic cross-chance)
 (def ^:dynamic mutation-chance)
 
-(defn calc-adaptation [choices]
-  (let [sum-by (fn [sel] (->> choices (map #(* (sel %1) %2) d/items) (reduce +)))
-        weight (sum-by :weight)]
-    (if (> weight d/total-weight) 0 (sum-by :value))))
+(defn calc-adaptation [choices])
 
 (defn create-specimen [choices]
   {:pre (= d/len (count choices))}
-  (->specimen choices (calc-adaptation choices)))
+  (let [sum-by (fn [sel] (->> choices (map #(* (sel %1) %2) d/items) (reduce +)))
+        weight (sum-by :weight)
+        value (sum-by :value)]
+    (->specimen choices weight value (>= d/max-weight weight))))
 
 ;; (defn spawn-orphan []
 ;;   (create-specimen (repeatedly length #(rand-int 2))))
@@ -109,23 +109,27 @@
           (recur xs (- rem v))
           k)))))
 
-(defn roulette [population]
-  (choose-weighted (map (juxt identity :score) population)))
+(defn roulette [population scoring-fn]
+  (choose-weighted (map (juxt identity scoring-fn) population)))
 
-(defn advance [{:keys [size cross-fns] :as conf} state]
+(defn advance [{:keys [size cross-fns selector] :as conf} state]
   (into #{} (repeatedly size #(apply cross
                                      (choose-weighted cross-fns)
-                                     (select-n state 2 roulette)))))
+                                     (select-n state 2  selector)))))
 
 (defn simulate [{:keys [size duration] :as conf}]
   (let [initial-state (create-initial-population size)]
     (take  duration (iterate (partial advance conf) initial-state))))
 
-(let [data (map  (partial map :score) (simulate {:size 50
-                                                 :duration 200
-                                                 :cross-fns  {mutate 3
-                                                              simple-cross 3
-                                                              random-cross 3}}))]
+(defn dumb-score [{:keys [value valid]}]
+  (if valid value 0))
+
+(let [data (map #(map dumb-score (filter :valid %)) (simulate {:size 50
+                                                               :duration 200
+                                                               :selector #(roulette % dumb-score)
+                                                               :cross-fns  {mutate 3
+                                                                            simple-cross 3
+                                                                            random-cross 3}}))]
   (view (let [plot (box-plot [])]
           (doseq [x data]
             (add-box-plot plot x))
