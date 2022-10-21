@@ -123,13 +123,16 @@
 
 (defn dumb-score [{:keys [value valid]}]
   (if valid value 0))
+(defn squared [{:keys [value valid weight]}]
+  (if valid (* value) (* value  0.5 (/ d/max-weight weight))))
 
-(let [data (map #(map dumb-score (filter :valid %)) (simulate {:size 50
-                                                               :duration 200
-                                                               :selector #(roulette % dumb-score)
-                                                               :cross-fns  {mutate 3
-                                                                            simple-cross 3
-                                                                            random-cross 3}}))]
+(let [data (map #(map dumb-score (filter :valid %))
+                (simulate {:size 30
+                           :duration 200
+                           :selector #(roulette % squared)
+                           :cross-fns  {mutate 3
+                                        simple-cross 3
+                                        random-cross 3}}))]
   (view (let [plot (box-plot [])]
           (doseq [x data]
             (add-box-plot plot x))
