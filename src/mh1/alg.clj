@@ -18,7 +18,7 @@
   (let [sum-by (fn [sel] (->> choices (map #(* (sel %1) %2) d/items) (reduce +)))
         weight (sum-by :weight)
         value (sum-by :value)]
-    (->specimen choices weight value (>= d/max-weight weight) (rand))))
+    (->specimen choices weight value (>= d/max-weight weight) "uwu")))
 
 ;; (defn spawn-orphan []
 ;;   (create-specimen (repeatedly length #(rand-int 2))))
@@ -63,6 +63,10 @@
   ;; 011110001100
   (defn entirely-new []
     (repeat d/len sr))
+
+  ;; ababababab
+  ;; aabbaabbaa
+  ;; aaabbbaaab
   (defn stripe-cross [x]
     (let [pattern (concat (repeat x a) (repeat x b))]
       (->> pattern
@@ -71,19 +75,11 @@
            (take d/len)
            constantly)))
 
-  ;; ababababab
-  (def stripe-1 (stripe-cross 1))
-  ;; aabbaabbaa
-  (def stripe-2 (stripe-cross 2))
-  ;; aaabbbaaab
-  (def stripe-3 (stripe-cross 3))
-
   ;; aaaaaaaāaaaaa
   (defn mutate []
     (->> a
          (repeat d/len)
          vec
-         (#(assoc % (rand-int d/len) flip))
          (#(assoc % (rand-int d/len) flip))))
   (defn flip-all []
     (repeat d/len (fn [a _] (flip a)))))
@@ -113,7 +109,7 @@
 (defn ranked [elements scoring-fn]
   (->> elements
        (sort-by  scoring-fn <)
-       (map-indexed (fn [a b] [b (inc a)]))
+       (map-indexed (fn [a b] [b a]))
        choose-weighted))
 (sort-by first (frequencies (repeatedly 10000 #(ranked (range 5) identity))))
 (sort-by first (frequencies (repeatedly 10000 #(choose-weighted {:a 1 :b 1 :c 1}))))
@@ -131,16 +127,21 @@
 
 (defn dumb-score [{:keys [value valid]}]
   (if valid value 0))
-(defn squared [{:keys [value valid weight]}]
+(defn allowing [{:keys [value valid weight]}]
   (if valid value (* value 0.3 (/ d/max-weight weight))))
+(defn  squared [{:keys [value valid weight]}]
+  (* value (if valid value (* value 0.3 (/ d/max-weight weight)))))
 
 (let [cfg {:size 30
            :duration 300
            :step 5
-           :selector  #(ranked % squared)
-           :cross-fns  {mutate 3
-                        simple-cross 4
-                        random-cross 4
+           :selector  #(roulette % squared)
+           :cross-fns  {mutate 5
+                        simple-cross 3
+                        random-cross 3
+                        (stripe-cross 1) 1
+                        (stripe-cross 2) 1
+                        (stripe-cross 3) 1
                         flip-all 1
                         entirely-new 1}}
       data (map #(->>  % (filter :valid) (map dumb-score))
