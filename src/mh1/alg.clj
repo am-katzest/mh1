@@ -89,8 +89,10 @@
          (repeat d/len)
          vec
          (#(assoc % (rand-int d/len) {0 1, 1 0}))
+         (#(assoc % (rand-int d/len) {0 1, 1 0}))
          (map #(fn [a _] (% a)))))
-  (mutate))
+  (defn flip-all []
+    (repeat d/len (fn [a _] ({0 1, 1 0} a)))))
 
 (defn cross [f a b]
   (let [ac (:choices a)
@@ -110,7 +112,14 @@
           k)))))
 
 (defn roulette [population scoring-fn]
-  (choose-weighted (map (juxt identity scoring-fn) population)))
+  (->> population
+       (map (juxt identity scoring-fn))
+       choose-weighted))
+(defn ranked [elements scoring-fn]
+  (->> elements
+       (sort-by  scoring-fn >)
+       (map-indexed (fn [a b] [b (inc a)]))
+       choose-weighted))
 
 (defn advance [{:keys [size cross-fns selector] :as conf} state]
   (into #{} (repeatedly size #(apply cross
@@ -124,15 +133,17 @@
 (defn dumb-score [{:keys [value valid]}]
   (if valid value 0))
 (defn squared [{:keys [value valid weight]}]
-  (if valid (* value) (* value  0.5 (/ d/max-weight weight))))
+  (if valid value (* value 0.3 (/ d/max-weight weight))))
 
-(let [data (map #(map dumb-score (filter :valid %))
-                (simulate {:size 30
-                           :duration 200
-                           :selector #(roulette % squared)
-                           :cross-fns  {mutate 3
-                                        simple-cross 3
-                                        random-cross 3}}))]
+(let [cfg {:size 20
+           :duration 100
+           :selector #(roulette % squared)
+           :cross-fns  {mutate 3
+                        simple-cross 3
+                        random-cross 3
+                        flip-all 1}}
+      data (map #(map dumb-score (filter :valid %))
+                (simulate cfg))]
   (view (let [plot (box-plot [])]
           (doseq [x data]
             (add-box-plot plot x))
