@@ -5,7 +5,7 @@
             [incanter.charts :refer :all]
             [incanter.io :refer :all]))
 
-(defrecord specimen [choices weight value valid])                      ; the thing we are evolving
+(defrecord specimen [choices weight value valid id])                      ; the thing we are evolving
 
 (def ^:dynamic point-mutation)
 (def ^:dynamic cross-chance)
@@ -18,7 +18,7 @@
   (let [sum-by (fn [sel] (->> choices (map #(* (sel %1) %2) d/items) (reduce +)))
         weight (sum-by :weight)
         value (sum-by :value)]
-    (->specimen choices weight value (>= d/max-weight weight))))
+    (->specimen choices weight value (>= d/max-weight weight) (rand))))
 
 ;; (defn spawn-orphan []
 ;;   (create-specimen (repeatedly length #(rand-int 2))))
@@ -34,14 +34,6 @@
 (defn create-initial-population [size]
   (into #{} (repeatedly size spawn-orphan)))
 
-(def tmp (create-initial-population 3))
-
-(defn point-mutation [a]
-  (let [loc (rand-int (count a))]
-    (update a loc flip)))
-
-;; (def possible-actions [{:prob 1 :fn point-mutation :arity 1}])
-
 (defn select-n [elems n choice-fn]
   (loop [elems elems
          n n
@@ -52,10 +44,11 @@
                  (dec n)
                  (conj acc choice))))))
 
-(let [a (fn [a _] a)
+(let [a (fn [a & _] a)
       b (fn [_ b] b)
       r #(rand-nth [a b])
-      flip {1 0, 0 1}]
+      flip (comp {1 0, 0 1} a)
+      sr (fn [& _] (rand-nth [0 1]))]
   ;; aaabbbbbbb
   ;; aaaaaaabbb
   (defn simple-cross []
@@ -67,7 +60,9 @@
   ;; babbbababa
   (defn random-cross []
     (repeatedly  d/len r))
-
+  ;; 011110001100
+  (defn entirely-new []
+    (repeat d/len sr))
   (defn stripe-cross [x]
     (let [pattern (concat (repeat x a) (repeat x b))]
       (->> pattern
@@ -85,14 +80,13 @@
 
   ;; aaaaaaaāaaaaa
   (defn mutate []
-    (->> identity
+    (->> a
          (repeat d/len)
          vec
-         (#(assoc % (rand-int d/len) {0 1, 1 0}))
-         (#(assoc % (rand-int d/len) {0 1, 1 0}))
-         (map #(fn [a _] (% a)))))
+         (#(assoc % (rand-int d/len) flip))
+         (#(assoc % (rand-int d/len) flip))))
   (defn flip-all []
-    (repeat d/len (fn [a _] ({0 1, 1 0} a)))))
+    (repeat d/len (fn [a _] (flip a)))))
 
 (defn cross [f a b]
   (let [ac (:choices a)
@@ -102,13 +96,14 @@
     (create-specimen (mapv #(%1 %2 %3) fc ac bc))))
 
 (defn choose-weighted [xs]
+  {:post (some? %)}
   ;; takes {weight value} map, values should be non-negative
   (let [choice (->> xs (map second) (reduce +) (* (rand)))]
     (loop [[[k v] & xs] xs
            rem choice]
       (let [rem (- rem v)]
         (if (pos? rem)
-          (recur xs (- rem v))
+          (recur xs rem)
           k)))))
 
 (defn roulette [population scoring-fn]
@@ -117,14 +112,18 @@
        choose-weighted))
 (defn ranked [elements scoring-fn]
   (->> elements
-       (sort-by  scoring-fn >)
+       (sort-by  scoring-fn <)
        (map-indexed (fn [a b] [b (inc a)]))
        choose-weighted))
+(sort-by first (frequencies (repeatedly 10000 #(ranked (range 5) identity))))
+(sort-by first (frequencies (repeatedly 10000 #(choose-weighted {:a 1 :b 1 :c 1}))))
 
-(defn advance [{:keys [size cross-fns selector] :as conf} state]
-  (into #{} (repeatedly size #(apply cross
-                                     (choose-weighted cross-fns)
-                                     (select-n state 2  selector)))))
+(defn advance [{:keys [size cross-fns selector step] :as conf} state]
+  (println (count state))
+  (into (select-n state (- size step) selector)
+        (repeatedly step #(apply cross
+                                 (choose-weighted cross-fns)
+                                 (select-n state 2  selector)))))
 
 (defn simulate [{:keys [size duration] :as conf}]
   (let [initial-state (create-initial-population size)]
@@ -135,16 +134,19 @@
 (defn squared [{:keys [value valid weight]}]
   (if valid value (* value 0.3 (/ d/max-weight weight))))
 
-(let [cfg {:size 20
-           :duration 100
-           :selector #(roulette % squared)
+(let [cfg {:size 30
+           :duration 300
+           :step 5
+           :selector  #(ranked % squared)
            :cross-fns  {mutate 3
-                        simple-cross 3
-                        random-cross 3
-                        flip-all 1}}
-      data (map #(map dumb-score (filter :valid %))
+                        simple-cross 4
+                        random-cross 4
+                        flip-all 1
+                        entirely-new 1}}
+      data (map #(->>  % (filter :valid) (map dumb-score))
                 (simulate cfg))]
   (view (let [plot (box-plot [])]
           (doseq [x data]
             (add-box-plot plot x))
-          plot)))
+          plot))
+  :ok)

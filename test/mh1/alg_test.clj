@@ -26,6 +26,20 @@
                count)
           30))
   (is (>= 70
+          (->> #(choose-weighted {:a 2 :b 0 :c 0.5 :d 0.5 :e 1})
+               repeatedly
+               (take 200)
+               (filter #{:e})
+               count)
+          30))
+  (is (>= 70
+          (->> #(choose-weighted {:a 2 :b 0 :c 0.5 :d 0.5 :e 1})
+               repeatedly
+               (take 400)
+               (filter #{:d})
+               count)
+          30))
+  (is (>= 70
           (->> #(choose-weighted {:a 100 :b 100})
                repeatedly
                (take 100)
@@ -38,4 +52,22 @@
                (take 100)
                (filter #{:a})
                count)
-          30)))
+          30))
+  (is (= 100
+         (->> #(choose-weighted {:a 0.1 :b 0.1})
+              repeatedly
+              (take 100)
+              (filter some?)
+              count)))
+  (is (= 100
+         (->> #(choose-weighted {:a 1 :b 100})
+              repeatedly
+              (take 100)
+              (filter some?)
+              count)))
+  (is (= 100
+         (->> #(choose-weighted {:a 10000.15319 :b 1})
+              repeatedly
+              (take 100)
+              (filter some?)
+              count))))
