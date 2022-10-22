@@ -104,30 +104,29 @@
                                (recur xs rem)
                                k)))))
   ([n xs]
-   {:pre (<= n (count xs))
-    :post (= n (count %))}
+   {:post (= n (count %))}
    ;; takes {weight value} map, values should be non-negative
-   (let [sum (sum-vals xs)]
-     (loop [unchoosen (into {} xs)
-            to-be-choosen n
-            results []]
-       (let [choices (sort (repeatedly to-be-choosen #(* (rand) sum)))
-             loop-results (loop [[[k v] & xs] unchoosen
-                                 choices choices
-                                 ctr 0
-                                 acc []]
-                            (if (nil? v) acc
-                                (let [ctr' (+ ctr v)
-                                      this? #(> ctr' %)
-                                      ;;  remove those below
-                                      this-one (filter this? choices)
-                                      rest (remove this? choices)]
-                                  (cond (empty? this-one) (recur xs rest ctr' acc)
-                                        :else  (recur xs rest ctr' (conj acc k))))))
-             to-be-choosen' (- to-be-choosen (count loop-results))
-             results' (concat results loop-results)]
-         (if (= to-be-choosen' 0) results'
-             (recur (apply dissoc unchoosen loop-results) to-be-choosen' results')))))))
+   (if (>= n (count xs)) (keys xs)
+       (loop [unchoosen (into {} xs)
+              to-be-choosen n
+              results []]
+         (let [sum (sum-vals unchoosen)
+               choices (sort (repeatedly to-be-choosen #(* sum (rand))))
+               loop-results (loop [[[k v] & xs] unchoosen
+                                   choices choices
+                                   ctr 0
+                                   acc []]
+                              (if (nil? v) acc
+                                  (let [ctr' (+ ctr v)
+                                        this? #(> ctr' %)
+                                        ;;  remove those below
+                                        [this-one rest] (split-with this? choices)]
+                                    (cond (empty? this-one) (recur xs rest ctr' acc)
+                                          :else  (recur xs rest ctr' (conj acc k))))))
+               to-be-choosen' (- to-be-choosen (count loop-results))
+               results' (concat results loop-results)]
+           (if (= to-be-choosen' 0) results'
+               (recur (apply dissoc unchoosen loop-results) to-be-choosen' results')))))))
 
 (defn roulette [population scoring-fn]
   (->> population
@@ -139,23 +138,17 @@
        (sort-by  scoring-fn <)
        (map-indexed (fn [a b] [b a]))
        choose-weighted))
+(defn ranked-raw [elements scoring-fn]
+  (println (count elements))
+  (->> elements
+       (sort-by  scoring-fn <)
+       (map-indexed (fn [a b] [b a]))))
 
 (defn sqranked [elements scoring-fn]
   (->> elements
        (sort-by  scoring-fn <)
        (map-indexed (fn [a b] [b (* (inc a) (inc a))]))
        choose-weighted))
-
-(defn advance [{:keys [size cross-fns selector step] :as conf} state]
-  (let [survivors (select-n state (- size step) selector)
-        children (repeatedly step #(apply cross
-                                          (choose-weighted cross-fns)
-                                          (select-n state 2  selector)))]
-    (into survivors children)))
-
-(defn simulate [{:keys [size duration] :as conf}]
-  (let [initial-state (create-initial-population size)]
-    (take  duration (iterate (partial advance conf) initial-state))))
 
 (defn dumb-score [{:keys [value valid]}]
   (if valid value 0))
@@ -164,15 +157,29 @@
   (fn  [{:keys [value valid weight]}]
     (if valid value (* value x (/ d/max-weight weight)))))
 
+(defn advance [{:keys [size cross-fns selector scoring-fn step] :as conf} state]
+  (let [ranked (ranked-raw state dumb-score)
+        survivors (choose-weighted  (- size step) ranked)
+        children (repeatedly step #(apply cross
+                                          (choose-weighted cross-fns)
+                                          (choose-weighted 2 ranked)))]
+    (into survivors children)))
+
+(defn simulate [{:keys [size duration] :as conf}]
+  (let [initial-state (create-initial-population size)]
+    (take  duration (iterate (partial advance conf) initial-state))))
+
 (let [cfg {:size 200
            :duration 50
            :step 10
-           :selector  #(ranked % dumb-score)
+           :scoring-fn dumb-score
+           :selector  ranked
            :cross-fns  {mutate 5
                         simple-cross 3
-                        random-cross 3
-                        flip-all 1
-                        entirely-new 1}}
+                        ;; random-cross 3
+                        ;; flip-all 1
+                        ;; entirely-new 1
+                        }}
       data (map #(->>  % (filter :valid) (map dumb-score))
                 (simulate cfg))
       _ (time (last data))]
