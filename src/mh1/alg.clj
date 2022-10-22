@@ -91,16 +91,43 @@
     (assert (= (count ac) (count bc) (count fc)))
     (create-specimen (mapv #(%1 %2 %3) fc ac bc))))
 
-(defn choose-weighted [xs]
-  {:post (some? %)}
-  ;; takes {weight value} map, values should be non-negative
-  (let [choice (->> xs (map second) (reduce +) (* (rand)))]
-    (loop [[[k v] & xs] xs
-           rem choice]
-      (let [rem (- rem v)]
-        (if (pos? rem)
-          (recur xs rem)
-          k)))))
+(defn sum-vals [vs] (->> vs (map second) (reduce +)))
+(defn choose-weighted ([xs]
+                       {:post (some? %)}
+                    ;; takes {weight value} map, values should be non-negative
+                       (let [sum (sum-vals xs)
+                             choice (* (rand) sum)]
+                         (loop [[[k v] & xs] xs
+                                rem choice]
+                           (let [rem (- rem v)]
+                             (if (pos? rem)
+                               (recur xs rem)
+                               k)))))
+  ([n xs]
+   {:pre (<= n (count xs))
+    :post (= n (count %))}
+   ;; takes {weight value} map, values should be non-negative
+   (let [sum (sum-vals xs)]
+     (loop [unchoosen (into {} xs)
+            to-be-choosen n
+            results []]
+       (let [choices (sort (repeatedly to-be-choosen #(* (rand) sum)))
+             loop-results (loop [[[k v] & xs] unchoosen
+                                 choices choices
+                                 ctr 0
+                                 acc []]
+                            (if (nil? v) acc
+                                (let [ctr' (+ ctr v)
+                                      this? #(> ctr' %)
+                                      ;;  remove those below
+                                      this-one (filter this? choices)
+                                      rest (remove this? choices)]
+                                  (cond (empty? this-one) (recur xs rest ctr' acc)
+                                        :else  (recur xs rest ctr' (conj acc k))))))
+             to-be-choosen' (- to-be-choosen (count loop-results))
+             results' (concat results loop-results)]
+         (if (= to-be-choosen' 0) results'
+             (recur (apply dissoc unchoosen loop-results) to-be-choosen' results')))))))
 
 (defn roulette [population scoring-fn]
   (->> population
@@ -133,13 +160,14 @@
 (defn dumb-score [{:keys [value valid]}]
   (if valid value 0))
 
-(defn allowing [{:keys [value valid weight]}]
-  (if valid value (* value 0.9 (/ d/max-weight weight))))
+(defn allowing [x]
+  (fn  [{:keys [value valid weight]}]
+    (if valid value (* value x (/ d/max-weight weight)))))
 
 (let [cfg {:size 200
-           :duration 30
-           :step 30
-           :selector  #(ranked % allowing)
+           :duration 50
+           :step 10
+           :selector  #(ranked % dumb-score)
            :cross-fns  {mutate 5
                         simple-cross 3
                         random-cross 3
