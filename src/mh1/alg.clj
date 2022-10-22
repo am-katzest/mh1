@@ -106,20 +106,25 @@
   (->> population
        (map (juxt identity scoring-fn))
        choose-weighted))
+
 (defn ranked [elements scoring-fn]
   (->> elements
        (sort-by  scoring-fn <)
        (map-indexed (fn [a b] [b a]))
        choose-weighted))
-(sort-by first (frequencies (repeatedly 10000 #(ranked (range 5) identity))))
-(sort-by first (frequencies (repeatedly 10000 #(choose-weighted {:a 1 :b 1 :c 1}))))
+
+(defn sqranked [elements scoring-fn]
+  (->> elements
+       (sort-by  scoring-fn <)
+       (map-indexed (fn [a b] [b (* (inc a) (inc a))]))
+       choose-weighted))
 
 (defn advance [{:keys [size cross-fns selector step] :as conf} state]
-  (println (count state))
-  (into (select-n state (- size step) selector)
-        (repeatedly step #(apply cross
-                                 (choose-weighted cross-fns)
-                                 (select-n state 2  selector)))))
+  (let [survivors (select-n state (- size step) selector)
+        children (repeatedly step #(apply cross
+                                          (choose-weighted cross-fns)
+                                          (select-n state 2  selector)))]
+    (into survivors children)))
 
 (defn simulate [{:keys [size duration] :as conf}]
   (let [initial-state (create-initial-population size)]
@@ -127,27 +132,25 @@
 
 (defn dumb-score [{:keys [value valid]}]
   (if valid value 0))
-(defn allowing [{:keys [value valid weight]}]
-  (if valid value (* value 0.3 (/ d/max-weight weight))))
-(defn  squared [{:keys [value valid weight]}]
-  (* value (if valid value (* value 0.3 (/ d/max-weight weight)))))
 
-(let [cfg {:size 30
-           :duration 300
-           :step 5
-           :selector  #(roulette % squared)
+(defn allowing [{:keys [value valid weight]}]
+  (if valid value (* value 0.9 (/ d/max-weight weight))))
+
+(let [cfg {:size 200
+           :duration 30
+           :step 30
+           :selector  #(ranked % allowing)
            :cross-fns  {mutate 5
                         simple-cross 3
                         random-cross 3
-                        (stripe-cross 1) 1
-                        (stripe-cross 2) 1
-                        (stripe-cross 3) 1
                         flip-all 1
                         entirely-new 1}}
       data (map #(->>  % (filter :valid) (map dumb-score))
-                (simulate cfg))]
+                (simulate cfg))
+      _ (time (last data))]
   (view (let [plot (box-plot [])]
           (doseq [x data]
             (add-box-plot plot x))
           plot))
   :ok)
+;; (view (histogram (map  (fn [{:keys [weight value]}] (/ value weight)) d/items)))
