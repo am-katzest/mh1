@@ -7,28 +7,18 @@
 
 (defrecord specimen [choices weight value valid id])                      ; the thing we are evolving
 
-(defn create-specimen [choices]
+(defn create-specimen [{:keys [merge-identical]} choices]
   {:pre (= d/len (count choices))}
   (let [sum-by (fn [sel] (->> choices (map #(* (sel %1) %2) d/items) (reduce +)))
         weight (sum-by :weight)
         value (sum-by :value)]
-    (->specimen choices weight value (>= d/max-weight weight) :bez-duplikatów)))
+    (->specimen choices weight value (>= d/max-weight weight) (if merge-identical :merge (rand)))))
 
-(defn spawn-orphan []
-  (create-specimen (repeatedly d/len #(rand-int 2))))
+(defn spawn-orphan [conf]
+  (create-specimen conf (repeatedly d/len #(rand-int 2))))
 
-(defn create-initial-population [size]
-  (into #{} (repeatedly size spawn-orphan)))
-
-(defn select-n [elems n choice-fn]
-  (loop [elems elems
-         n n
-         acc #{}]
-    (if (= n 0) acc
-        (let [choice (choice-fn elems)]
-          (recur (disj elems choice)
-                 (dec n)
-                 (conj acc choice))))))
+(defn create-initial-population [{:keys [size] :as conf}]
+  (into #{} (repeatedly size #(spawn-orphan conf))))
 
 (let [a (fn [a & _] a)
       b (fn [_ b] b)
@@ -68,37 +58,37 @@
            (take d/len)
            constantly)))
 
-  ;; aaaaaaaāaaaaa
-  (defn mutate []
-    (->> a
-         (repeat d/len)
-         vec
-         (#(assoc % (rand-int d/len) flip))))
+  ;; aaaāaaaaāaa
+  (defn mutate [x]
+    (fn [] (shuffle (concat (repeat x flip)
+                            (repeat (- d/len x) a)))))
+  ;; āāāāāāāāāāā
   (defn flip-all []
     (repeat d/len (fn [a _] (flip a)))))
 
-(defn cross [f a b]
+(defn cross [conf f a b]
   (let [ac (:choices a)
         bc (:choices b)
         fc (f)]
     (assert (= (count ac) (count bc) (count fc)))
-    (create-specimen (mapv #(%1 %2 %3) fc ac bc))))
+    (create-specimen conf (mapv #(%1 %2 %3) fc ac bc))))
 
 (defn sum-vals [vs] (->> vs (map second) (reduce +)))
-(defn choose-weighted ([xs]
-                       {:post (some? %)}
-                    ;; takes {weight value} map, values should be non-negative
-                       (let [sum (sum-vals xs)
-                             choice (* (rand) sum)]
-                         (loop [[[k v] & xs] xs
-                                rem choice]
-                           (let [rem (- rem v)]
-                             (if (pos? rem)
-                               (recur xs rem)
-                               k)))))
+
+(defn choose-weighted
+  "takes {weight value} map, values should be non-negative"
+  ([xs]
+   {:post (some? %)}
+   (let [sum (sum-vals xs)
+         choice (* (rand) sum)]
+     (loop [[[k v] & xs] xs
+            rem choice]
+       (let [rem (- rem v)]
+         (if (pos? rem)
+           (recur xs rem)
+           k)))))
   ([n xs]
    {:post (= n (count %))}
-   ;; takes {weight value} map, values should be non-negative
    (if (>= n (count xs)) (keys xs)
        (loop [unchoosen (into {} xs)
               to-be-choosen n
@@ -121,9 +111,9 @@
            (if (= to-be-choosen' 0) results'
                (recur (apply dissoc unchoosen loop-results) to-be-choosen' results')))))))
 
-(defn make-specimen [avialable-methods ranked-pop]
-  (apply cross
-         (choose-weighted avialable-methods)
+(defn make-specimen [{:keys [cross-fns] :as conf} ranked-pop]
+  (apply cross conf
+         (choose-weighted cross-fns)
          (choose-weighted 2 ranked-pop)))
 
 (defn roulette [population scoring-fn]
@@ -135,44 +125,44 @@
        (sort-by  scoring-fn <)
        (map-indexed (fn [a b] [b a]))))
 
-(defn sqranked [elements scoring-fn]
-  (->> elements
-       (sort-by  scoring-fn <)
-       (map-indexed (fn [a b] [b (* (inc a) (inc a))]))))
-
-(defn dumb-score [{:keys [value valid]}]
-  (if valid value 0))
-
 (defn allowing [x]
   (fn  [{:keys [value valid weight]}]
-    (if valid value (* value x (/ d/max-weight weight)))))
+    (if valid value (max 0.001 (* value x (/ d/max-weight weight))))))
 
 (defn advance [{:keys [size cross-fns distribution-fn scoring-fn step] :as conf} state]
   (let [ranked (distribution-fn state scoring-fn)
         survivors (choose-weighted  (- size step) ranked)
-        children (repeatedly step #(make-specimen cross-fns ranked))]
+        children (repeatedly step #(make-specimen conf ranked))]
     (into survivors children)))
 
 (defn simulate [{:keys [size duration] :as conf}]
-  (let [initial-state (create-initial-population size)]
+  (let [initial-state (create-initial-population conf)]
     (take  duration (iterate (partial advance conf) initial-state))))
-
+;; (let [a (create-specimen (repeat 26 0))
+;;       b (create-specimen (repeat 26 1))]
+;;   (println "x")
+;;   (println a)
+;;   ;; (println b)
+;;   (println (cross (mutate 3) a a)))
 (let [cfg {:size 70
-           :duration 500
+           :duration 5000
            :step 5
-           :scoring-fn (allowing 0.9)
+           :merge-identical true
+           :scoring-fn (comp  #(Math/pow % 5) (allowing 0.9))
            :distribution-fn  ranked
-           :cross-fns  {mutate 5
+           :cross-fns  {(mutate 1) 3
+                        (mutate 2) 2
+                        (mutate 3) 1
                         simple-cross 3
                         random-cross 3
+                        cut-cross 3
                         flip-all 0.5
-                        cut-cross 5
                         entirely-new 0.5}}
       data (->> cfg
                 simulate
-                (partition 2)
+                (partition 50)
                 (map first)
-                (map #(->>  % (filter :valid) (map dumb-score))))]
+                (map #(->>  % (filter :valid) (map :value))))]
   (time (last data))
   (println "max:" (apply  max (map (partial apply max) data)))
   (time (let [plot (box-plot [])]
@@ -183,3 +173,5 @@
             view)))
   :ok)
 ;; (view (histogram (map  (fn [{:keys [weight value]}] (/ value weight)) d/items)))
+(defmacro power [count]
+  ~(fn [x] `(concat [*'] (repeat count x))))
