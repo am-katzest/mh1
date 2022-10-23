@@ -5,15 +5,15 @@
             [incanter.charts :refer :all]
             [incanter.io :refer :all]))
 
-(let [cfg {#'population-size 300
-           #'duration 1600
-           #'replacement-rate 30
+(let [cfg {#'population-size 80
+           #'duration 300
+           #'replacement-rate 10
            #'merge-identical true
-           #'scoring-fn  (allowing 0.9) ;; (comp  #(Math/pow % 5) (allowing 0.9))
+           #'scoring-fn  (allowing 1 3) ;; (comp  #(Math/pow % 5) (allowing 0.9 3))
            #'distribution-fn  ranked
-           #'cross-fns  {(mutate 1) 3
-                         (mutate 2) 2
-                         (mutate 3) 5
+           #'cross-fns  {(mutate 1) 1   ;mało przydatne
+                         (mutate 2) 2   ;ma jakąś tam szanse na ulepszenie
+                         (mutate 3) 1
                          one-point 3
                          random-cross 3
                          two-point 3
@@ -21,7 +21,7 @@
                          entirely-new 0.5}}
       data (->> cfg
                 simulate
-                (partition 3)
+                (partition 1)           ; only graph every-nth generation
                 (map first)
                 (map #(->>  % (filter :valid) (map :value)))
                 time)]

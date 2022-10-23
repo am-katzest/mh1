@@ -1,7 +1,8 @@
 # mh1
 
-metaheurystyki
+genetyczne robaczki uwu
 
 ## Usage
 
-idk, yet
+`lein install`, zainstaluje wymagane biblioteki (`incanter`, do grafów),
+załadowanie pliku `core.clj` w repl powinno pokazać graf po kilku sekundach

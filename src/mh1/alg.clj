@@ -127,9 +127,9 @@
        (sort-by  scoring-fn <)
        (map-indexed (fn [a b] [b a]))))
 
-(defn allowing [x]
+(defn allowing [scale power]
   (fn  [{:keys [value valid weight]}]
-    (if valid value (max 0.001 (* value x (Math/pow (/ d/max-weight weight) 3))))))
+    (if valid value (max 0.001 (* value scale (Math/pow (/ d/max-weight weight) power))))))
 (defn advance [state]
   (let [roulette-wheel (distribution-fn state)
         survivors (choose-weighted  (- population-size replacement-rate) roulette-wheel)
