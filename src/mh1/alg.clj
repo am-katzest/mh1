@@ -114,9 +114,8 @@
                (recur (apply dissoc unchoosen loop-results) to-be-choosen' results')))))))
 
 (defn make-specimen [ranked-pop]
-  (apply cross
-         (choose-weighted cross-fns)
-         (shuffle (choose-weighted 2 ranked-pop))))
+  (let [[a b] (shuffle (choose-weighted 2 ranked-pop))]
+    (cross (choose-weighted cross-fns) a b)))
 
 (defn roulette [population]
   (->> population
