@@ -14,16 +14,17 @@
 (def ^:dynamic scoring-fn)
 (def ^:dynamic distribution-fn)
 (def ^:dynamic cross-fns)
+(def ^:dynamic choices-len d/len)
 
 (defn create-specimen [choices]
-  {:pre (= d/len (count choices))}
+  {:pre (= choices-len (count choices))}
   (let [sum-by (fn [sel] (->> choices (map #(* (sel %1) %2) d/items) (reduce +)))
         weight (sum-by :weight)
         value (sum-by :value)]
     (->specimen choices weight value (>= d/max-weight weight) (if merge-identical :merge (rand)))))
 
 (defn spawn-orphan []
-  (create-specimen (repeatedly d/len #(rand-int 2))))
+  (create-specimen (repeatedly choices-len #(rand-int 2))))
 
 (defn create-initial-population []
   (into #{} (repeatedly population-size spawn-orphan)))
@@ -35,25 +36,25 @@
       sr (fn [& _] (rand-nth [0 1]))]
   ;; aaabbbbbbb
   ;; aaaaaaabbb
-  (defn simple-cross []
-    (let [x (rand-int d/len)
-          y (- d/len x)]
+  (defn one-point []
+    (let [x (rand-int choices-len)
+          y (- choices-len x)]
       (concat (repeat x a)
               (repeat y b))))
-  (defn cut-cross []
-    (let [x (rand-int d/len)
-          y (rand-int (- d/len x))
-          z (- d/len x y)]
+  (defn two-point []
+    (let [x (rand-int choices-len)
+          y (rand-int (- choices-len x))
+          z (- choices-len x y)]
       (concat (repeat x a)
               (repeat y b)
               (repeat z a))))
   ;; ababbbabbb
   ;; babbbababa
   (defn random-cross []
-    (repeatedly  d/len r))
+    (repeatedly  choices-len r))
   ;; 011110001100
   (defn entirely-new []
-    (repeat d/len sr))
+    (repeat choices-len sr))
   ;; ababababab
   ;; aabbaabbaa
   ;; aaabbbaaab
@@ -62,15 +63,15 @@
       (->> pattern
            repeat
            (apply concat)
-           (take d/len)
+           (take choices-len)
            constantly)))
   ;; aaaāaaaaāaa
   (defn mutate [x]
     (fn [] (shuffle (concat (repeat x flip)
-                            (repeat (- d/len x) a)))))
+                            (repeat (- choices-len x) a)))))
   ;; āāāāāāāāāāā
   (defn flip-all []
-    (repeat d/len (fn [a _] (flip a)))))
+    (repeat choices-len (fn [a _] (flip a)))))
 
 (defn cross [f a b]
   (let [ac (:choices a)
@@ -133,7 +134,8 @@
 
 (defn allowing [x]
   (fn  [{:keys [value valid weight]}]
-    (if valid value (max 0.001 (* value x (/ d/max-weight weight))))))
+    (if valid value (max 0.001 (* value x (/ d/max-weight weight)
+                                  (/ d/max-weight weight))))))
 
 (defn advance [state]
   (let [roulette-wheel (distribution-fn state)
@@ -151,26 +153,25 @@
 ;;   (println a)
 ;;   ;; (println b)
 ;;   (println (cross (mutate 3) a a)))
-(let [cfg {#'population-size 70
-           #'duration 500
-           #'replacement-rate 5
+(let [cfg {#'population-size 300
+           #'duration 600
+           #'replacement-rate 30
            #'merge-identical true
-           #'scoring-fn (comp  #(Math/pow % 5) (allowing 0.9))
+           #'scoring-fn  (allowing 0.9) ;; (comp  #(Math/pow % 5) (allowing 0.9))
            #'distribution-fn  ranked
            #'cross-fns  {(mutate 1) 3
                          (mutate 2) 2
-                         (mutate 3) 1
-                         simple-cross 3
+                         (mutate 3) 5
+                         one-point 3
                          random-cross 3
-                         cut-cross 3
+                         two-point 3
                          flip-all 0.5
                          entirely-new 0.5}}
       data (->> cfg
                 simulate
-                (partition 10)
+                (partition 3)
                 (map first)
                 (map #(->>  % (filter :valid) (map :value)))
-                doall
                 time)]
   (println "max:" (apply  max (map (partial apply max) data)))
   (time (let [plot (box-plot [])]
