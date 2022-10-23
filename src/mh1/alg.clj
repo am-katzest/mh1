@@ -57,8 +57,7 @@
   (defn stripe-cross [x]
     (let [pattern (concat (repeat x a) (repeat x b))]
       (->> pattern
-           repeat
-           (apply concat)
+           cycle
            (take choices-len)
            constantly)))
   ;; aaaāaaaaāaa
@@ -130,9 +129,7 @@
 
 (defn allowing [x]
   (fn  [{:keys [value valid weight]}]
-    (if valid value (max 0.001 (* value x (/ d/max-weight weight)
-                                  (/ d/max-weight weight))))))
-
+    (if valid value (max 0.001 (* value x (Math/pow (/ d/max-weight weight) 3))))))
 (defn advance [state]
   (let [roulette-wheel (distribution-fn state)
         survivors (choose-weighted  (- population-size replacement-rate) roulette-wheel)
