@@ -14,8 +14,8 @@
            (allowing 1 3)
            ;; (comp #(Math/pow % 15) (allowing 1 3))
            #'distribution-fn
-           ranked
-           ;; (fn [x] (let [x (sort-by scoring-fn > x)] (fn [n] (take n x))))
+           ;; ranked
+           (fn [x] (let [x (sort-by scoring-fn > x)] (fn [n] (take n x))))
            #'choose-cross-method  (make-wheel
                                    {(mutate 1) 1 ;mało przydatne
                                     (mutate 2) 2 ;ma jakąś tam szanse na ulepszenie

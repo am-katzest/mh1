@@ -16,3 +16,6 @@ pom.xml.asc
 *.aux
 *.pdf
 *.el
+/sprawko/snippets/
+*.pygtex
+*.pygstyle

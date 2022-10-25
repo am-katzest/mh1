@@ -2,7 +2,7 @@
   (:require [mh1.data :as d]
             [mh1.utils :refer [make-wheel]]))
 
-(defrecord specimen [choices weight value valid id])                      ; the thing we are evolving
+(defrecord specimen [choices weight value valid id]) ; the thing we are evolving
 
 (def ^:dynamic population-size)
 (def ^:dynamic duration)
@@ -16,13 +16,16 @@
 
 (defn create-specimen [choices]
   {:pre (= choices-len (count choices))}
-  (let [sum-by (fn [sel] (->> choices (map #(* (sel %1) %2) d/items) (reduce +)))
+  (let [sum-by (fn [sel] (->> choices
+                              (map #(* (sel %1) %2) d/items)
+                              (reduce +)))
         weight (sum-by :weight)
         value (sum-by :value)]
-    (->specimen choices weight value (valid? weight) (if merge-identical :merge (rand)))))
-
-(defn spawn-orphan []
-  (create-specimen (repeatedly choices-len #(rand-int 2))))
+    (->specimen choices
+                weight
+                value
+                (valid? weight)
+                (if merge-identical :merge (rand)))))
 
 (let [a (fn [a & _] a)
       b (fn [_ b] b)
@@ -100,12 +103,16 @@
                             scale
                             (Math/pow (/ d/max-weight weight)
                                       power))))))
-
+;; advance --
 (defn advance [state]
   (let [chooser (distribution-fn state)
         survivors (chooser  (- population-size replacement-rate))
         children (repeatedly replacement-rate #(make-specimen chooser))]
     (into survivors children)))
+;; --
+
+(defn spawn-orphan []
+  (create-specimen (repeatedly choices-len #(rand-int 2))))
 
 (defn create-initial-population []
   (into #{} (repeatedly population-size spawn-orphan)))
