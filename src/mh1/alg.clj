@@ -10,7 +10,7 @@
 (def ^:dynamic merge-identical)
 (def ^:dynamic scoring-fn)
 (def ^:dynamic distribution-fn)
-(def ^:dynamic cross-fns)
+(def ^:dynamic choose-cross-method)
 (def ^:dynamic choices-len d/len)
 (def ^:dynamic valid? #(<= % d/max-weight))
 
@@ -79,7 +79,7 @@
 
 (defn make-specimen [wheel]
   (let [[a b] (shuffle (wheel 2))
-        [f] (cross-fns 1)]
+        [f] (choose-cross-method 1)]
     (cross f a b)))
 
 (defn roulette [population]
