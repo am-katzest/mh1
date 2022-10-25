@@ -37,12 +37,15 @@
           y (- choices-len x)]
       (concat (repeat x a)
               (repeat y b))))
+  ;; aaabbbbaa
+  ;; abaaaaaaa
+  ;; aaaaabbba
   (defn two-point []
-    (let [x (rand-int choices-len)
+    (let [x (inc (rand-int (dec choices-len))) ; at least one
           y (rand-int (- choices-len x))
           z (- choices-len x y)]
-      (concat (repeat x a)
-              (repeat y b)
+      (concat (repeat y a)
+              (repeat x b)
               (repeat z a))))
   ;; ababbbabbb
   ;; babbbababa
@@ -111,28 +114,61 @@
                to-be-choosen' (- to-be-choosen (count loop-results))
                results' (concat results loop-results)]
            (if (= to-be-choosen' 0) results'
-               (recur (apply dissoc unchoosen loop-results) to-be-choosen' results')))))))
+               (recur (apply dissoc unchoosen loop-results) to-be-choosen' results'))))))
+  ([n sum xs]
+   {:post (= n (count %))}
+   (case (>= n (count xs)) (keys xs)
+         (= n 0) []
+         :else (let [choices (sort (repeatedly n #(* sum (rand))))
+                     results (loop [[[k v] & xs] xs
+                                    choices choices
+                                    ctr 0
+                                    acc []]
+                               (if (nil? v) acc
+                                   (let [ctr' (+ ctr v)
+                                         this? #(> ctr' %)
+                                   ;;  remove those below
+                                         [this-one rest] (split-with this? choices)]
+                                     (cond (empty? this-one) (recur xs rest ctr' acc)
+                                           :else  (recur xs rest ctr' (conj acc k))))))
+                     to-be-choosen' (- n (count results))]
+                 (if (= to-be-choosen' 0) results
+                     (into results
+                           (choose-weighted to-be-choosen'
+                                            (apply dissoc xs results))))))))
 
-(defn make-specimen [ranked-pop]
-  (let [[a b] (shuffle (choose-weighted 2 ranked-pop))]
+(defn make-specimen [wheel]
+  (let [[a b] (shuffle (wheel 2))]
     (cross (choose-weighted cross-fns) a b)))
+
+(defn make-wheel [kvs]
+  (let [elems (into {} kvs)
+        sum (sum-vals kvs)]
+    #(choose-weighted % sum elems)))
 
 (defn roulette [population]
   (->> population
-       (map (juxt identity scoring-fn))))
+       (map (juxt identity scoring-fn))
+       make-wheel))
 
 (defn ranked [population]
   (->> population
        (sort-by  scoring-fn <)
-       (map-indexed (fn [a b] [b a]))))
+       (map-indexed (fn [a b] [b a]))
+       make-wheel))
 
 (defn allowing [scale power]
   (fn  [{:keys [value valid weight]}]
-    (if valid value (max 0.001 (* value scale (Math/pow (/ d/max-weight weight) power))))))
+    (if valid value (max 0.001
+                         (* value
+                            scale
+                            (Math/pow (/ d/max-weight weight)
+                                      power))))))
+
 (defn advance [state]
-  (let [roulette-wheel (distribution-fn state)
-        survivors (choose-weighted  (- population-size replacement-rate) roulette-wheel)
-        children (repeatedly replacement-rate #(make-specimen roulette-wheel))]
+  (let [chooser (distribution-fn state)
+        survivors (chooser  (- population-size replacement-rate))
+        children (repeatedly replacement-rate #(make-specimen chooser))]
     (into survivors children)))
 
 (defn simulate [conf]
@@ -144,4 +180,4 @@
                b (create-specimen (repeat choices-len 1))]
            (println "x")
            (println a)
-           (println (cross (stripe-cross 3) a b))))
+           (println (cross two-point a b))))

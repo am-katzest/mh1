@@ -5,9 +5,9 @@
             [incanter.charts :refer :all]
             [incanter.io :refer :all]))
 
-(let [cfg {#'population-size 80
-           #'duration 300
-           #'replacement-rate 10
+(let [cfg {#'population-size 200
+           #'duration 600
+           #'replacement-rate 20
            #'merge-identical true
            #'scoring-fn  (allowing 1 3) ;; (comp  #(Math/pow % 5) (allowing 0.9 3))
            #'distribution-fn  ranked
@@ -16,7 +16,7 @@
                          (mutate 3) 1
                          one-point 3
                          random-cross 3
-                         two-point 3
+                         two-point 300
                          flip-all 0.5
                          entirely-new 0.5}}
       data (->> cfg
@@ -25,11 +25,11 @@
                 (map first)
                 (map #(->>  % (filter :valid) (map :value)))
                 time)]
-  (println "max:" (apply  max (map (partial apply max) data)))
-  (time (let [plot (box-plot [])]
-          (doseq [x data]
-            (add-box-plot plot x))
-          (doto plot
-            (set-y-range 12000000 13700000)
-            view)))
+  (println "max:" (apply  max (apply concat data)))
+  (let [plot (box-plot [])]
+    (doseq [x data]
+      (add-box-plot plot x))
+    (doto plot
+      (set-y-range 12000000 13700000)
+      view))
   :ok)
