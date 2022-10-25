@@ -1,5 +1,6 @@
 (ns mh1.alg
-  (:require [mh1.data :as d]))
+  (:require [mh1.data :as d]
+            [mh1.utils :refer [make-wheel]]))
 
 (defrecord specimen [choices weight value valid id])                      ; the thing we are evolving
 
@@ -11,19 +12,17 @@
 (def ^:dynamic distribution-fn)
 (def ^:dynamic cross-fns)
 (def ^:dynamic choices-len d/len)
+(def ^:dynamic valid? #(<= % d/max-weight))
 
 (defn create-specimen [choices]
   {:pre (= choices-len (count choices))}
   (let [sum-by (fn [sel] (->> choices (map #(* (sel %1) %2) d/items) (reduce +)))
         weight (sum-by :weight)
         value (sum-by :value)]
-    (->specimen choices weight value (>= d/max-weight weight) (if merge-identical :merge (rand)))))
+    (->specimen choices weight value (valid? weight) (if merge-identical :merge (rand)))))
 
 (defn spawn-orphan []
   (create-specimen (repeatedly choices-len #(rand-int 2))))
-
-(defn create-initial-population []
-  (into #{} (repeatedly population-size spawn-orphan)))
 
 (let [a (fn [a & _] a)
       b (fn [_ b] b)
@@ -78,73 +77,10 @@
     (assert (= (count ac) (count bc) (count fc)))
     (create-specimen (mapv #(%1 %2 %3) fc ac bc))))
 
-(defn sum-vals [vs] (->> vs (map second) (reduce +)))
-
-(defn choose-weighted
-  "takes {weight value} map, values should be non-negative"
-  ([xs]
-   {:post (some? %)}
-   (let [sum (sum-vals xs)
-         choice (* (rand) sum)]
-     (loop [[[k v] & xs] xs
-            rem choice]
-       (let [rem (- rem v)]
-         (if (pos? rem)
-           (recur xs rem)
-           k)))))
-  ([n xs]
-   {:post (= n (count %))}
-   (if (>= n (count xs)) (keys xs)
-       (loop [unchoosen (into {} xs)
-              to-be-choosen n
-              results []]
-         (let [sum (sum-vals unchoosen)
-               choices (sort (repeatedly to-be-choosen #(* sum (rand))))
-               loop-results (loop [[[k v] & xs] unchoosen
-                                   choices choices
-                                   ctr 0
-                                   acc []]
-                              (if (nil? v) acc
-                                  (let [ctr' (+ ctr v)
-                                        this? #(> ctr' %)
-                                        ;;  remove those below
-                                        [this-one rest] (split-with this? choices)]
-                                    (cond (empty? this-one) (recur xs rest ctr' acc)
-                                          :else  (recur xs rest ctr' (conj acc k))))))
-               to-be-choosen' (- to-be-choosen (count loop-results))
-               results' (concat results loop-results)]
-           (if (= to-be-choosen' 0) results'
-               (recur (apply dissoc unchoosen loop-results) to-be-choosen' results'))))))
-  ([n sum xs]
-   {:post (= n (count %))}
-   (case (>= n (count xs)) (keys xs)
-         (= n 0) []
-         :else (let [choices (sort (repeatedly n #(* sum (rand))))
-                     results (loop [[[k v] & xs] xs
-                                    choices choices
-                                    ctr 0
-                                    acc []]
-                               (if (nil? v) acc
-                                   (let [ctr' (+ ctr v)
-                                         this? #(> ctr' %)
-                                   ;;  remove those below
-                                         [this-one rest] (split-with this? choices)]
-                                     (cond (empty? this-one) (recur xs rest ctr' acc)
-                                           :else  (recur xs rest ctr' (conj acc k))))))
-                     to-be-choosen' (- n (count results))]
-                 (if (= to-be-choosen' 0) results
-                     (into results
-                           (choose-weighted to-be-choosen'
-                                            (apply dissoc xs results))))))))
-
 (defn make-specimen [wheel]
-  (let [[a b] (shuffle (wheel 2))]
-    (cross (choose-weighted cross-fns) a b)))
-
-(defn make-wheel [kvs]
-  (let [elems (into {} kvs)
-        sum (sum-vals kvs)]
-    #(choose-weighted % sum elems)))
+  (let [[a b] (shuffle (wheel 2))
+        [f] (cross-fns 1)]
+    (cross f a b)))
 
 (defn roulette [population]
   (->> population
@@ -171,13 +107,19 @@
         children (repeatedly replacement-rate #(make-specimen chooser))]
     (into survivors children)))
 
+(defn create-initial-population []
+  (into #{} (repeatedly population-size spawn-orphan)))
+
 (defn simulate [conf]
   (with-bindings conf
     (let [initial-state (create-initial-population)]
       (doall (take duration (iterate advance initial-state))))))
 
+;; example
 (comment (let [a (create-specimen (repeat choices-len 0))
-               b (create-specimen (repeat choices-len 1))]
-           (println "x")
+               b (create-specimen (repeat choices-len 1))
+               x (cross two-point a b)]
            (println a)
-           (println (cross two-point a b))))
+           (println b)
+           (println x)
+           x))
