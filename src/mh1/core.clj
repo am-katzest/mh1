@@ -8,15 +8,17 @@
 
 (let [cfg {#'population-size 200
            #'duration 300
-           #'replacement-rate 20
+           #'replacement-rate 70
            #'merge-identical true
-           #'scoring-fn  (if true          ;set to false for `roulette`
-                           (allowing 1 3)
-                           (comp #(Math/pow % 15) (allowing 1 3)))
-           #'distribution-fn ranked  ;; (fn [x] (fn [n] (take n (sort-by scoring-fn > x))))
+           #'scoring-fn
+           (allowing 1 3)
+           ;; (comp #(Math/pow % 15) (allowing 1 3))
+           #'distribution-fn
+           ranked
+           ;; (fn [x] (let [x (sort-by scoring-fn > x)] (fn [n] (take n x))))
            #'choose-cross-method  (make-wheel
-                                   {(mutate 1) 1            ;mało przydatne
-                                    (mutate 2) 2  ;ma jakąś tam szanse na ulepszenie
+                                   {(mutate 1) 1 ;mało przydatne
+                                    (mutate 2) 2 ;ma jakąś tam szanse na ulepszenie
                                     (mutate 3) 1
                                     one-point 3
                                     random-cross 3
