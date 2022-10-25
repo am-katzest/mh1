@@ -9,8 +9,10 @@
            #'duration 600
            #'replacement-rate 20
            #'merge-identical true
-           #'scoring-fn  (allowing 1 3) ;; (comp  #(Math/pow % 5) (allowing 0.9 3))
-           #'distribution-fn  ranked
+           #'scoring-fn  (if true          ;set to false for `roulette`
+                           (allowing 1 3)
+                           (comp #(Math/pow % 15) (allowing 1 3)))
+           #'distribution-fn ranked  ;; (fn [x] (fn [n] (take n (sort-by scoring-fn > x))))
            #'cross-fns  {(mutate 1) 1   ;mało przydatne
                          (mutate 2) 2   ;ma jakąś tam szanse na ulepszenie
                          (mutate 3) 1
