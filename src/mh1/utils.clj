@@ -39,7 +39,7 @@
                (recur (apply dissoc unchoosen loop-results) to-be-choosen' results'))))))
   ([n sum xs]
    {:post (= n (count %))}
-   (case (>= n (count xs)) (keys xs)
+   (case (>= n (count xs)) (map second xs)
          (= n 0) []
          :else (let [choices (sort (repeatedly n #(* sum (rand))))
                      results (loop [[[k v] & xs] xs
@@ -57,8 +57,8 @@
                  (if (= to-be-choosen' 0) results
                      (into results
                            (choose-weighted to-be-choosen'
-                                            (apply dissoc xs results))))))))
+                                            (apply dissoc (into {} xs) results))))))))
 (defn make-wheel [kvs]
-  (let [elems (into {} kvs)
+  (let [elems (into [] kvs)
         sum (sum-vals kvs)]
     #(choose-weighted % sum elems)))
