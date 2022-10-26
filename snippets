@@ -2,5 +2,5 @@
 dir=$1
 shift
 for file in "$@"; do
-    awk -vpath="$dir" -vfile="$(basename "$file")" '/^;;.*--$/&&tag{tag=""}/^;; .* --/&&!tag{tag=$2;next}tag{print $0 > path "/" file "_" tag}' "$file"
+    awk -vpath="$dir" -vfile="$(basename "$file")" '$1==";;"&&$2=="--"&&tag{tag=""}$1==";;"&&$3=="--"&&!tag{tag=$2;next}tag{print $0 > path "/" file "_" tag}' "$file"
 done

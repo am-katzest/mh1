@@ -62,3 +62,8 @@
   (let [elems (into () kvs)
         sum (sum-vals kvs)]
     #(choose-weighted % sum elems)))
+
+(defn  up-until [pred coll]
+  (let [[a [b]] (split-with (complement pred) coll)]
+    (if (nil? b) a
+        (concat a [b]))))

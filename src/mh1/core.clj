@@ -4,18 +4,21 @@
             [incanter.stats :refer :all]
             [incanter.charts :refer :all]
             [incanter.io :refer :all]
+            [incanter.pdf :as pdf]
             [mh1.utils :refer [make-wheel]]))
 
+(defn extract-correct-scores [xs] (->>  xs (filter :valid) (map :value)))
 (let [cfg {#'population-size 200
            #'duration 300
-           #'replacement-rate 70
+           #'replacement-rate 40
            #'merge-identical true
            #'scoring-fn
            (allowing 1 3)
            ;; (comp #(Math/pow % 15) (allowing 1 3))
            #'distribution-fn
-           ;; ranked
-           (fn [x] (let [x (sort-by scoring-fn > x)] (fn [n] (take n x))))
+           ranked
+           ;; (fn [x] (let [x (sort-by scoring-fn > x)] (fn [n] (take n x))))
+           #'good-enough? (fn [pop] (<= 13692887 (reduce max 0 (extract-correct-scores pop))))
            #'choose-cross-method  (make-wheel
                                    {(mutate 1) 1 ;mało przydatne
                                     (mutate 2) 2 ;ma jakąś tam szanse na ulepszenie
@@ -29,13 +32,15 @@
                 simulate
                 (partition 1)           ; only graph every-nth generation
                 (map first)
-                (map #(->>  % (filter :valid) (map :value)))
+                (map extract-correct-scores)
                 time)]
-  (println "max:" (apply  max (apply concat data)))
+  (println "max:" (reduce  max 0 (apply concat data)))
   (let [plot (box-plot [])]
     (doseq [x data]
       (add-box-plot plot x))
     (doto plot
       (set-y-range 12000000 13700000)
-      view))
+      (set-y-label "wartość")
+      view
+      (pdf/save-pdf "uwu.pdf")))
   :ok)

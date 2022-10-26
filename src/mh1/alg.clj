@@ -1,6 +1,6 @@
 (ns mh1.alg
   (:require [mh1.data :as d]
-            [mh1.utils :refer [make-wheel]]))
+            [mh1.utils :refer [make-wheel up-until]]))
 
 (defrecord specimen [choices weight value valid id]) ; the thing we are evolving
 
@@ -13,6 +13,7 @@
 (def ^:dynamic choose-cross-method)
 (def ^:dynamic choices-len d/len)
 (def ^:dynamic valid? #(<= % d/max-weight))
+(def ^:dynamic good-enough? (constantly false))
 
 (defn create-specimen [choices]
   {:pre (= choices-len (count choices))}
@@ -30,24 +31,30 @@
 (let [a (fn [a & _] a)
       b (fn [_ b] b)
       r #(rand-nth [a b])
+      don't-flip a
       flip (comp {1 0, 0 1} a)
-      sr (fn [& _] (rand-nth [0 1]))]
+      sr (fn [& _] (rand-nth [0 1]))
+      rng-without-extremes #(inc (rand-int (- % 2)))]
+
+  ;; one-point --
   ;; aaabbbbbbb
   ;; aaaaaaabbb
   (defn one-point []
-    (let [x (rand-int choices-len)
+    (let [x (rng-without-extremes choices-len)
           y (- choices-len x)]
       (concat (repeat x a)
               (repeat y b))))
+  ;; --
+
   ;; aaabbbbaa
   ;; abaaaaaaa
   ;; aaaaabbba
   (defn two-point []
-    (let [x (inc (rand-int (dec choices-len))) ; at least one
-          y (rand-int (- choices-len x))
+    (let [x (rng-without-extremes choices-len)
+          y (rng-without-extremes (- choices-len x))
           z (- choices-len x y)]
-      (concat (repeat y a)
-              (repeat x b)
+      (concat (repeat x a)
+              (repeat y b)
               (repeat z a))))
   ;; ababbbabbb
   ;; babbbababa
@@ -56,6 +63,8 @@
   ;; 011110001100
   (defn entirely-new []
     (repeat choices-len sr))
+
+  ;; stripe
   ;; ababababab
   ;; aabbaabbaa
   ;; aaabbbaaab
@@ -65,13 +74,19 @@
            cycle
            (take choices-len)
            constantly)))
+  ;; --
+
+  ;; mutate --
   ;; aaaāaaaaāaa
   (defn mutate [x]
-    (fn [] (shuffle (concat (repeat x flip)
-                            (repeat (- choices-len x) a)))))
+    (fn [] (shuffle
+            (concat (repeat x flip)
+                    (repeat (- choices-len x) don't-flip)))))
+  ;; --
+
   ;; āāāāāāāāāāā
   (defn flip-all []
-    (repeat choices-len (fn [a _] (flip a)))))
+    ((mutate choices-len))))
 
 (defn cross [f a b]
   (let [ac (:choices a)
@@ -93,16 +108,20 @@
 (defn ranked [population]
   (->> population
        (sort-by  scoring-fn <)
-       (map-indexed (fn [a b] [b a]))
+       (map-indexed (fn [a b] [b (inc a)]))
        make-wheel))
 
+;; scoring --
 (defn allowing [scale power]
   (fn  [{:keys [value valid weight]}]
-    (if valid value (max 0.001
-                         (* value
-                            scale
-                            (Math/pow (/ d/max-weight weight)
-                                      power))))))
+    (if valid
+      value
+      (let [weight-factor (/ d/max-weight weight)
+            weight-comp (Math/pow weight-factor power)
+            result (* value scale weight-comp)]
+        (max 0.001 result)))))
+;; --
+
 ;; advance --
 (defn advance [state]
   (let [chooser (distribution-fn state)
@@ -120,8 +139,11 @@
 (defn simulate [conf]
   (with-bindings conf
     (let [initial-state (create-initial-population)]
-      (doall (take duration (iterate advance initial-state))))))
-
+      (->> initial-state
+           (iterate advance)
+           (up-until good-enough?)
+           (take duration)
+           doall))))
 ;; example
 (comment (let [a (create-specimen (repeat choices-len 0))
                b (create-specimen (repeat choices-len 1))
@@ -130,3 +152,10 @@
            (println b)
            (println x)
            x))
+
+(comment (reduce #(map + %1 %2)
+                 (for [_ (range 1000)]
+                   (let [a (create-specimen (repeat choices-len 0))
+                         b (create-specimen (repeat choices-len 1))
+                         x (cross (mutate choices-len) a b)]
+                     (:choices x)))))
