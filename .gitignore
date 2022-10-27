@@ -19,3 +19,4 @@ pom.xml.asc
 /sprawko/snippets/
 *.pygtex
 *.pygstyle
+/sprawko/_region_.tex

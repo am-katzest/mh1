@@ -160,10 +160,12 @@
       (->> initial-state
            ;; (to zwraca leniwą sekwencję x, f(x), f(f(x))...
            (iterate advance)
-           ;; ucinamy po znalezieniu wystarczająco dobrego rozwiązania
-           (up-until good-enough?)
-           ;; albo po przekroczeniu maksymalnej ilości
+           ;; progress
+           (map-indexed (fn [idx x] (print (format "\r%.2f" (* 100.0 (inc idx) (/  duration)))) (flush) x))
+           ;;ucinamy po przekroczeniu maksymalnej ilości
            (take duration)
+           ;; albo po znalezieniu wystarczająco dobrego rozwiązania
+           (up-until good-enough?)
            ;; sekwencja niestety musi być zrealizowana lokalnie
            doall))))
 ;; --
@@ -171,7 +173,7 @@
 ;; tutaj są przykłady działania niektórych funkcji
 (comment (let [a (create-specimen (repeat choices-len 0))
                b (create-specimen (repeat choices-len 1))
-               x (cross two-point a b)]
+               x (cross (mutate 3) a b)]
            (println a)
            (println b)
            (println x)
