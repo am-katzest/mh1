@@ -160,8 +160,6 @@
       (->> initial-state
            ;; (to zwraca leniwą sekwencję x, f(x), f(f(x))...
            (iterate advance)
-           ;; progress
-           (map-indexed (fn [idx x] (print (format "\r%.2f" (* 100.0 (inc idx) (/  duration)))) (flush) x))
            ;;ucinamy po przekroczeniu maksymalnej ilości
            (take duration)
            ;; albo po znalezieniu wystarczająco dobrego rozwiązania
