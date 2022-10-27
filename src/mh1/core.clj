@@ -10,10 +10,10 @@
             [clojure.core.matrix :as matrix]))
 (defn extract-correct-scores [xs] (->>  xs (filter :valid) (map :value)))
 
-(let [cfg {#'population-size 50
+(let [cfg {#'population-size 200
            #'duration 400
-           #'replacement-rate 5
-           #'merge-identical false
+           #'replacement-rate 20
+           #'merge-identical true
            #'scoring-fn
            (allowing 0 3)
            ;; (comp #(Math/pow % 10) (allowing 1 3))
@@ -37,10 +37,19 @@
                        (map extract-correct-scores)
                        time))]
   (let [plot (box-plot [])
-        results (pmap run (range 40))
-        maxs (matrix/transpose (map #(map (partial apply max) %) results))]
-    (doseq [x maxs]
-      (add-box-plot plot x))
+        results (pmap run (range 30))
+        maxs (matrix/transpose (map #(map (partial apply max) %) results))
+        mins (matrix/transpose (map #(map (partial apply min) %) results))
+        medians (matrix/transpose (map #(map median %) results))]
+    ;; (doseq [x maxs]
+    ;;   (add-box-plot plot x :series-label 3))
+    ;; (doseq [x  means]
+    ;;   (add-box-plot plot x :series-label 1))
+    (doseq [[maxs meds mins] (partition 3 (interleave maxs medians mins))]
+      (add-box-plot plot maxs :series-label 1)
+      (add-box-plot plot meds :series-label 2)
+      ;; (add-box-plot plot mins :series-label 3)
+      )
     (doto plot
       (set-y-range 12000000 13700000)
       (set-y-label (format "wartość"))
