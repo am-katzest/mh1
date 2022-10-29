@@ -20,3 +20,5 @@ pom.xml.asc
 *.pygtex
 *.pygstyle
 /sprawko/_region_.tex
+/sprawko/sprawozdanie.prv/
+/sprawko/sprawozdanie.synctex.gz
