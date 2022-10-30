@@ -26,27 +26,40 @@
        (map-indexed (fn [idx x] (println idx) x))
        tran))
 
-(def cfg {#'runs 20
-          #'population-size 100
-          #'duration 1000
-          #'replacement-rate 10
-          #'merge-identical true
-          #'scoring-fn
-          (allowing 0.95 3)
-          ;; (comp #(Math/pow % 10) (allowing 1 3))
-          #'distribution-fn
-          ranked
-          ;; (fn [x] (let [x (sort-by scoring-fn > x)] (fn [n] (take n x))))
-          ;; #'good-enough? (fn [pop] (<= 13692887 (reduce max 0 (extract-correct-scores pop))))
-          #'choose-cross-method  (make-wheel
-                                  {(mutate 1) 1 ;mało przydatne
-                                   (mutate 2) 2 ;ma jakąś tam szanse na ulepszenie
-                                   (mutate 3) 1
-                                   one-point 3
-                                   random-cross 3
-                                   two-point 3
-                                   flip-all 0.5
-                                   entirely-new 0.5})})
+(defn meta-available? [x]
+  (instance? clojure.lang.IMeta x))
+(defmacro add-names [dict]
+  (->> dict
+       (map (fn [[k v]]
+              [k `(let [e# ~v] (if (meta-available? e#)
+                                 (with-meta e# {:name ~(str v)}) e#))]))
+       (into {})))
+(defmacro with-named-bindings [c & xs]
+  (concat `(with-bindings (add-names ~c)) xs))
+
+(defn pretty [x] (or (:name (meta x)) (str x)))
+
+(def cfg (add-names {#'runs 10
+                     #'population-size 100
+                     #'duration 200
+                     #'replacement-rate 10
+                     #'merge-identical :pozwalaj
+                     #'scoring-fn
+                     (allowing 0.95 3)
+                     ;; (comp #(Math/pow % 10) (allowing 1 3))
+                     #'distribution-fn
+                     ranked
+                     ;; (fn [x] (let [x (sort-by scoring-fn > x)] (fn [n] (take n x))))
+                     ;; #'good-enough? (fn [pop] (<= 13692887 (reduce max 0 (extract-correct-scores pop))))
+                     #'choose-cross-method  (make-wheel
+                                             {(mutate 1) 1 ;mało przydatne
+                                              (mutate 2) 2 ;ma jakąś tam szanse na ulepszenie
+                                              (mutate 3) 1
+                                              one-point 3
+                                              random-cross 3
+                                              two-point 3
+                                              flip-all 0.5
+                                              entirely-new 0.5})}))
 
 (defn graph [results filename]
   (let [plot (box-plot [])
@@ -84,8 +97,11 @@
                            (graph results graph-filename)
                            (spit (str "sprawko/" f)
                                  (prepare-table results graph-filename))))
+(defmacro file& [cfg filename]
+  `(future (with-named-bindings ~cfg (create-section ~filename))))
+
 (with-bindings cfg
-  (binding [merge-identical true]
-    (create-section "1-mit.transient.tex"))
-  (binding [merge-identical false]
-    (create-section "1-mif.transient.tex")))
+  (file& {#'merge-identical :łącz} "1-mif.transient.tex")
+  (file& {#'merge-identical :pozwalaj} "1-mit.transient.tex")
+  ;; (file& {#'merge-identical :pozwalaj} "1-mit.transient.tex")
+  )

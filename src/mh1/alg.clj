@@ -31,7 +31,7 @@
                 ;; ponieważ są one przechowywane w hash-setach,
                 ;; osobniki zupełnie jednakowe są łączone
                 ;; dodanie losowej liczby temu zapobiega
-                (if merge-identical :merge (rand)))))
+                (if (= :łącz merge-identical) :merge (rand)))))
 
 ;; krzyżowanie --
 (let [a (fn [a & _] a)
