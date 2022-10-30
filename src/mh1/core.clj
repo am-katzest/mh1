@@ -5,52 +5,84 @@
             [incanter.charts :refer :all]
             [incanter.io :refer :all]
             [incanter.pdf :as pdf]
+            [comb.template :as template]
             [mh1.utils :refer [make-wheel]]
             [clojure.core.matrix.stats :as ms]
             [clojure.core.matrix :as matrix]))
-(defn extract-correct-scores [xs] (->>  xs (filter :valid) (map :value)))
+(def ^:dynamic graph-every-nth)
+(def ^:dynamic runs)
+(def ^:dynamic interesting-rows [10 20 50 100 150 200 300 400 600 800 1000])
+(def ^:dynamic format-entry #(format "%2.2f\\%%" (/ % 136928.87)))
 
-(let [cfg {#'population-size 200
-           #'duration 400
-           #'replacement-rate 20
-           #'merge-identical true
-           #'scoring-fn
-           (allowing 0 3)
-           ;; (comp #(Math/pow % 10) (allowing 1 3))
-           #'distribution-fn
-           ranked
-           ;; (fn [x] (let [x (sort-by scoring-fn > x)] (fn [n] (take n x))))
-           ;; #'good-enough? (fn [pop] (<= 13692887 (reduce max 0 (extract-correct-scores pop))))
-           #'choose-cross-method  (make-wheel
-                                   {(mutate 1) 1 ;mało przydatne
-                                    (mutate 2) 2 ;ma jakąś tam szanse na ulepszenie
-                                    (mutate 3) 1
-                                    one-point 3
-                                    random-cross 3
-                                    two-point 3
-                                    flip-all 0.5
-                                    entirely-new 0.5})}
-      run (fn [_] (->> cfg
-                       simulate
-                       (partition 1)     ; only graph every-nth generation
-                       (map first)
-                       (map extract-correct-scores)
-                       time))]
+(defn tran [x] (apply mapv vector x))
+(defn extract-correct-scores [xs] (->>  xs (filter :valid) (map :value)))
+(defn run [_] (map extract-correct-scores (simulate)))
+
+(defn make-up-data []
+  (->> runs
+       range
+       (pmap run)
+       (map-indexed (fn [idx x] (println idx) x))
+       tran))
+
+(def cfg {#'graph-every-nth 5
+          #'runs 20
+          #'population-size 200
+          #'duration 100
+          #'replacement-rate 20
+          #'merge-identical true
+          #'scoring-fn
+          (allowing 1 3)
+          ;; (comp #(Math/pow % 10) (allowing 1 3))
+          #'distribution-fn
+          ranked
+          ;; (fn [x] (let [x (sort-by scoring-fn > x)] (fn [n] (take n x))))
+          ;; #'good-enough? (fn [pop] (<= 13692887 (reduce max 0 (extract-correct-scores pop))))
+          #'choose-cross-method  (make-wheel
+                                  {(mutate 1) 1 ;mało przydatne
+                                   (mutate 2) 2 ;ma jakąś tam szanse na ulepszenie
+                                   (mutate 3) 1
+                                   one-point 3
+                                   random-cross 3
+                                   two-point 3
+                                   flip-all 0.5
+                                   entirely-new 0.5})})
+
+(defn graph [results filename]
   (let [plot (box-plot [])
-        results (pmap run (range 30))
-        maxs (matrix/transpose (map #(map (partial apply max) %) results))
-        mins (matrix/transpose (map #(map (partial apply min) %) results))
-        medians (matrix/transpose (map #(map median %) results))]
-    ;; (doseq [x maxs]
-    ;;   (add-box-plot plot x :series-label 3))
-    ;; (doseq [x  means]
-    ;;   (add-box-plot plot x :series-label 1))
-    (doseq [[maxs meds mins] (partition 3 (interleave maxs medians mins))]
-      (add-box-plot plot maxs :series-label 1)
-      (add-box-plot plot meds :series-label 2)
-      ;; (add-box-plot plot mins :series-label 3)
+        truncated (map first (partition graph-every-nth results))
+        add-column (fn [column f num]
+                     (add-box-plot
+                      plot
+                      (map f column)
+                      :series-label num))]
+
+    (doseq [column  truncated]
+      (add-column column (partial apply max) 1)
+      (add-column column median 2)
+      ;; (add-column column (partial apply min) 3)
       )
+
     (doto plot
       (set-y-range 12000000 13700000)
       (set-y-label (format "wartość"))
-      view)))
+      ;; (set-x-label "pokolenie")
+      (-> .getPlot .getDomainAxis (.setVisible false))
+      (pdf/save-pdf (str "sprawko/" filename) :width 1000))))
+
+(defn make-row [xs] (str (reduce #(str %1 " & " %2) xs) " \\\\\n"))
+(defn make-table [rows] (reduce str (map make-row rows)))
+(def textemplate (slurp "template.tex"))
+(defn prepare-table [results graph-name]
+  (let [maximums (map #(map (partial apply max) %) results)
+        dataa (map (fn [x] (cons x (map format-entry (quantile (nth maximums (dec x)))))) (take-while #(<= % duration) interesting-rows))]
+    (template/eval textemplate {:tabela (make-table dataa)
+                                :graf graph-name
+                                :pop population-size})))
+(with-bindings cfg
+  (let [results (make-up-data)
+        graph-filename (str (java.util.UUID/randomUUID) ".tmp.pdf")]
+    (graph results graph-filename)
+    (spit "sprawko/tmp.tex"
+          (prepare-table results graph-filename)))
+  :done)

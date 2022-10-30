@@ -153,19 +153,18 @@
   (into #{} (repeatedly population-size spawn-orphan)))
 
 ;; simulate --
-(defn simulate "przeprowadza symulację" [conf]
-  (with-bindings conf
-    ;; losujemy początkową populję
-    (let [initial-state (create-initial-population)]
-      (->> initial-state
-           ;; (to zwraca leniwą sekwencję x, f(x), f(f(x))...
-           (iterate advance)
-           ;;ucinamy po przekroczeniu maksymalnej ilości
-           (take duration)
-           ;; albo po znalezieniu wystarczająco dobrego rozwiązania
-           (up-until good-enough?)
-           ;; sekwencja niestety musi być zrealizowana lokalnie
-           doall))))
+(defn simulate "przeprowadza symulację" []
+  ;; losujemy początkową populję
+  (let [initial-state (create-initial-population)]
+    (->> initial-state
+         ;; (to zwraca leniwą sekwencję x, f(x), f(f(x))...
+         (iterate advance)
+         ;;ucinamy po przekroczeniu maksymalnej ilości
+         (take duration)
+         ;; albo po znalezieniu wystarczająco dobrego rozwiązania
+         (up-until good-enough?)
+         ;; sekwencja niestety musi być zrealizowana lokalnie
+         doall)))
 ;; --
 
 ;; tutaj są przykłady działania niektórych funkcji

@@ -1,0 +1,22 @@
+\begin{table}[H]
+	\begin{minipage}{0.40\textwidth}
+		\resizebox{\textwidth}{!}{
+			\begin{tabular}{|c|c|c|c|c|c|}
+				\hline
+				{Pokolenie} & min & Q1 & Q2 & Q3 & max \\
+				\hline
+				<%= tabela %>
+				\hline
+			\end{tabular}
+		}
+		\caption{rozkład maksimum względem pokolenia
+			populacja=<%= pop %>,
+			runs=<%= runs %>,
+		}
+
+	\end{minipage}
+	\begin{minipage}{0.60\textwidth}
+		\includegraphics[width=\textwidth]{<%= graf %>}
+		\label{tab:niepewności}
+	\end{minipage}
+\end{table}
