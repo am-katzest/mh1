@@ -22,3 +22,4 @@ pom.xml.asc
 /sprawko/_region_.tex
 /sprawko/sprawozdanie.prv/
 /sprawko/sprawozdanie.synctex.gz
+*.transient.tex

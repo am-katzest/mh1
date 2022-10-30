@@ -9,13 +9,14 @@
             [mh1.utils :refer [make-wheel]]
             [clojure.core.matrix.stats :as ms]
             [clojure.core.matrix :as matrix]))
-(def ^:dynamic graph-every-nth)
+(def ^:dynamic graph-every-nth :auto)
 (def ^:dynamic runs)
 (def ^:dynamic interesting-rows [10 20 50 100 150 200 300 400 600 800 1000])
 (def ^:dynamic format-entry #(format "%2.2f\\%%" (/ % 136928.87)))
 
 (defn tran [x] (apply mapv vector x))
-(defn extract-correct-scores [xs] (->>  xs (filter :valid) (map :value)))
+(defn extract-correct-scores [xs] (let [ans (->>  xs (filter :valid) (map :value))]
+                                    (if (empty? ans) [0] ans)))
 (defn run [_] (map extract-correct-scores (simulate)))
 
 (defn make-up-data []
@@ -25,14 +26,13 @@
        (map-indexed (fn [idx x] (println idx) x))
        tran))
 
-(def cfg {#'graph-every-nth 5
-          #'runs 20
-          #'population-size 200
-          #'duration 100
-          #'replacement-rate 20
+(def cfg {#'runs 20
+          #'population-size 100
+          #'duration 1000
+          #'replacement-rate 10
           #'merge-identical true
           #'scoring-fn
-          (allowing 1 3)
+          (allowing 0.95 3)
           ;; (comp #(Math/pow % 10) (allowing 1 3))
           #'distribution-fn
           ranked
@@ -50,7 +50,7 @@
 
 (defn graph [results filename]
   (let [plot (box-plot [])
-        truncated (map first (partition graph-every-nth results))
+        truncated (map first (partition (if (= :auto graph-every-nth) (max 1 (int (/ duration 100))) graph-every-nth) results))
         add-column (fn [column f num]
                      (add-box-plot
                       plot
@@ -59,7 +59,7 @@
 
     (doseq [column  truncated]
       (add-column column (partial apply max) 1)
-      (add-column column median 2)
+      ;; (add-column column median 2)
       ;; (add-column column (partial apply min) 3)
       )
 
@@ -68,7 +68,7 @@
       (set-y-label (format "wartość"))
       ;; (set-x-label "pokolenie")
       (-> .getPlot .getDomainAxis (.setVisible false))
-      (pdf/save-pdf (str "sprawko/" filename) :width 1000))))
+      (pdf/save-pdf (str "sprawko/" filename) :width 1000 :height 700))))
 
 (defn make-row [xs] (str (reduce #(str %1 " & " %2) xs) " \\\\\n"))
 (defn make-table [rows] (reduce str (map make-row rows)))
@@ -77,12 +77,15 @@
   (let [maximums (map #(map (partial apply max) %) results)
         dataa (map (fn [x] (cons x (map format-entry (quantile (nth maximums (dec x)))))) (take-while #(<= % duration) interesting-rows))]
     (template/eval textemplate {:tabela (make-table dataa)
-                                :graf graph-name
-                                :pop population-size})))
+                                :graf graph-name})))
+
+(defn create-section [f] (let [results (make-up-data)
+                               graph-filename (str (java.util.UUID/randomUUID) ".tmp.pdf")]
+                           (graph results graph-filename)
+                           (spit (str "sprawko/" f)
+                                 (prepare-table results graph-filename))))
 (with-bindings cfg
-  (let [results (make-up-data)
-        graph-filename (str (java.util.UUID/randomUUID) ".tmp.pdf")]
-    (graph results graph-filename)
-    (spit "sprawko/tmp.tex"
-          (prepare-table results graph-filename)))
-  :done)
+  (binding [merge-identical true]
+    (create-section "1-mit.transient.tex"))
+  (binding [merge-identical false]
+    (create-section "1-mif.transient.tex")))
