@@ -20,7 +20,7 @@
 
     (doseq [column  truncated]
       (add-column column (partial apply max) 1)
-      ;; (add-column column median 2)
+      (add-column column median 3)
       ;; (add-column column (partial apply min) 3)
       )
 
