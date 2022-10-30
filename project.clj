@@ -3,4 +3,5 @@
   :dependencies [[org.clojure/clojure "1.10.0"]
                  [incanter "1.9.3"]
                  [comb "0.1.1"]]
+  :main ^:skip-aot mh1.core
   :repl-options {:init-ns mh1.core})
