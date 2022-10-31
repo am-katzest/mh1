@@ -47,19 +47,7 @@
   (doseq [th @threads]
     (println @th))
   (println "all finished"))
-;; #'good-enough? (fn [pop] (<= 13692887 (reduce max 0 (extract-correct-scores pop))))
-;; (fn [x] (let [x (sort-by scoring-fn > x)] (fn [n] (take n x))))
 
-(defn krzyżowanie [metoda prawdopodobieństwo-mutacji]
-  (let [q (- 100 prawdopodobieństwo-mutacji)
-        p (/ prawdopodobieństwo-mutacji 3)]
-    (make-wheel {(mutate 2) p
-                 (mutate 3) p
-                 (mutate 4) p
-                 metoda q})))
-
-(def top (fn [x] (let [x (sort-by scoring-fn > x)] (fn [n] (take n x)))))
-(defn allowing-pow [a b power] (comp #(Math/pow % power) (allowing a b)))
 (defn -main []
   (with-named-bindings
     {#'runs 1 ;; 30
@@ -124,5 +112,7 @@
       (file& {#'scoring-fn (allowing 1.05 3)}  "6-6")
       (file& {#'scoring-fn (allowing 1 2)}  "6-7")
       (file& {#'scoring-fn (allowing 1 4)}  "6-8"))
-    (wait)))
+    (wait)
+    ;; (System/exit 0)
+    ))
 ;; (-main)

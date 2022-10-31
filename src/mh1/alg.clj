@@ -98,6 +98,14 @@
     (assert (= (count ac) (count bc) (count fc)))
     (create-specimen (mapv #(%1 %2 %3) fc ac bc))))
 
+(defn krzyżowanie [metoda prawdopodobieństwo-mutacji]
+  (let [q (- 100 prawdopodobieństwo-mutacji)
+        p (/ prawdopodobieństwo-mutacji 3)]
+    (make-wheel {(mutate 2) p
+                 (mutate 3) p
+                 (mutate 4) p
+                 metoda q})))
+
 (defn make-child "tworzy dziecko z populacji" [wheel]
   ;; wybieramy dwoje rodziców
   (let [[a b] (shuffle (wheel 2))
@@ -118,6 +126,10 @@
        (map-indexed (fn [a b] [b (inc a)]))
        make-wheel))
 
+(defn top "zawsze wybiera najbardziej przystosowane osobniki" [x]
+  (let [x (sort-by scoring-fn > x)]
+    (fn [n] (take n x))))
+
 ;; scoring --
 (defn allowing [scale power]
   (fn  [{:keys [value valid weight]}]
@@ -131,6 +143,10 @@
             result (* value scale weight-comp)]
         ;; nie chcemy tu zera, niektóre metody wybierania przy nim szwankują
         (max 0.001 result)))))
+
+(defn allowing-pow "allowing, z wynikiem podniesionym do `power` potęgi"
+  [a b power] (comp #(Math/pow % power) (allowing a b)))
+
 ;; --
 
 ;; advance --
