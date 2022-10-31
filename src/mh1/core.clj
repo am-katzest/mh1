@@ -16,7 +16,7 @@
 (defn make-up-data []
   (->> runs
        range
-       (pmap run)
+       (map run)
        tran))
 
 (defmacro add-names [dict]
@@ -39,48 +39,54 @@
                            (spit (str "sprawko/" f)
                                  (prepare-table results graph-filename))))
 
-;; (defmacro file& [cfg filename]
-;;   `(future (with-named-bindings ~cfg (create-section (str ~filename ".transient.tex"))) (println ~filename) (flush)))
-(defmacro file& [cfg filename]
-  `(do (with-named-bindings ~cfg (create-section (str ~filename ".transient.tex"))) (println ~filename) (flush)))
+(def threads (atom #{}))
 
+(defmacro file& [cfg filename]
+  `(swap! threads conj (future (with-named-bindings ~cfg (create-section (str ~filename ".transient.tex"))) ~filename)))
+(defn wait []
+  (doseq [th @threads]
+    (println @th))
+  (println "all finished"))
 ;; #'good-enough? (fn [pop] (<= 13692887 (reduce max 0 (extract-correct-scores pop))))
 ;; (fn [x] (let [x (sort-by scoring-fn > x)] (fn [n] (take n x))))
-(def mutacja:0 (make-wheel {two-point 1}))
-(def mutacja:10 (make-wheel {(mutate 3) 1 two-point 9}))
-(def mutacja:25 (make-wheel {(mutate 3) 1 two-point 3}))
-(def mutacja:50 (make-wheel {(mutate 3) 1 two-point 1}))
-(def mutacja:75 (make-wheel {(mutate 3) 3 two-point 1}))
-(def mutacja:100 (make-wheel {(mutate 3) 1}))
-(defn krzyżowanie [f] (make-wheel {f 9 (mutate 3) 1}))
+
+(defn krzyżowanie [metoda prawdopodobieństwo-mutacji]
+  (let [q (- 100 prawdopodobieństwo-mutacji)
+        p (/ prawdopodobieństwo-mutacji 3)]
+    (make-wheel {(mutate 2) p
+                 (mutate 3) p
+                 (mutate 4) p
+                 metoda q})))
 
 (def top (fn [x] (let [x (sort-by scoring-fn > x)] (fn [n] (take n x)))))
 (defn allowing-pow [a b power] (comp #(Math/pow % power) (allowing a b)))
 (defn -main []
   (with-named-bindings
-    {#'runs 2
+    {#'runs 1 ;; 30
      #'population-size 200
-     #'duration 1000
+     #'duration 20 ;; 1000
      #'replacement-rate 30
      #'merge-identical :łącz
-     #'scoring-fn (allowing 0.95 3) ;; (comp #(Math/pow % 10) (allowing 1 3))
+     #'scoring-fn (allowing 1 3) ;; (comp #(Math/pow % 10) (allowing 1 3))
      #'distribution-fn ranked
-     #'choose-cross-method  mutacja:25}
+     #'choose-cross-method  (krzyżowanie random-cross 25)}
     (println "starting")
     ;; łączenie
     (with-named-bindings {}
-      (file& {#'merge-identical :łącz} "1-mit")
-      (file& {#'merge-identical :pozwalaj} "1-mif"))
+      (file& {#'merge-identical :łącz
+              #'scoring-fn (allowing 0.95 3)} "1-mit")
+      (file& {#'merge-identical :pozwalaj
+              #'scoring-fn (allowing 0.95 3)} "1-mif"))
     ;;
     (with-named-bindings {#'population-size 30
                           #'replacement-rate 5}
       ;; mutacja
-      (file& {#'choose-cross-method mutacja:0} "2-m0")
-      (file& {#'choose-cross-method mutacja:10} "2-m10")
-      (file& {#'choose-cross-method mutacja:25} "2-m25")
-      (file& {#'choose-cross-method mutacja:50} "2-m50")
-      (file& {#'choose-cross-method mutacja:75} "2-m75")
-      (file& {#'choose-cross-method mutacja:100} "2-m100"))
+      (file& {#'choose-cross-method (krzyżowanie random-cross 0)} "2-m0")
+      (file& {#'choose-cross-method (krzyżowanie random-cross 10)} "2-m10")
+      (file& {#'choose-cross-method (krzyżowanie random-cross 25)} "2-m25")
+      (file& {#'choose-cross-method (krzyżowanie random-cross 50)} "2-m50")
+      (file& {#'choose-cross-method (krzyżowanie random-cross 75)} "2-m75")
+      (file& {#'choose-cross-method (krzyżowanie random-cross 100)} "2-m100"))
 
     ;; wielkość populacji
     (with-named-bindings {#'replacement-rate 20}
@@ -95,18 +101,28 @@
       (file& {#'distribution-fn ranked} "4-ranked")
       (file& {#'distribution-fn roulette} "4-roulette1")
       (file& {#'distribution-fn roulette
-              #'scoring-fn (allowing-pow 0.95 3 5)}  "4-roulette5")
+              #'scoring-fn (allowing-pow 1 3 5)}  "4-roulette5")
       (file& {#'distribution-fn roulette
-              #'scoring-fn (allowing-pow 0.95 3 10)} "4-roulette10")
+              #'scoring-fn (allowing-pow 1 3 10)} "4-roulette10")
       (file& {#'distribution-fn roulette
-              #'scoring-fn (allowing-pow 0.95 3 15)} "4-roulette15")
+              #'scoring-fn (allowing-pow 1 3 15)} "4-roulette15")
       (file& {#'distribution-fn roulette
-              #'scoring-fn (allowing-pow 0.95 3 20)} "4-roulette20")
+              #'scoring-fn (allowing-pow 1 3 20)} "4-roulette20")
       (file& {#'distribution-fn top}
              "4-top"))
     (with-named-bindings {}
-      (file& {#'choose-cross-method (krzyżowanie one-point)}  "5-1")
-      (file& {#'choose-cross-method (krzyżowanie two-point)}  "5-2")
-      (file& {#'choose-cross-method (krzyżowanie (stripe-cross 3))}  "5-5")
-      (file& {#'choose-cross-method (krzyżowanie random-cross)}  "5-6"))))
+      (file& {#'choose-cross-method (krzyżowanie one-point 25)}  "5-1")
+      (file& {#'choose-cross-method (krzyżowanie two-point 25)}  "5-2")
+      (file& {#'choose-cross-method (krzyżowanie (stripe-cross 3) 25)}  "5-5")
+      (file& {#'choose-cross-method (krzyżowanie random-cross 25)}  "5-6"))
+    (with-named-bindings {}
+      (file& {#'scoring-fn (allowing 0 3)}  "6-1")
+      (file& {#'scoring-fn (allowing 0.5 3)}  "6-2")
+      (file& {#'scoring-fn (allowing 0.9 3)}  "6-3")
+      (file& {#'scoring-fn (allowing 0.95 3)}  "6-4")
+      (file& {#'scoring-fn (allowing 1 3)}  "6-5")
+      (file& {#'scoring-fn (allowing 1.05 3)}  "6-6")
+      (file& {#'scoring-fn (allowing 1 2)}  "6-7")
+      (file& {#'scoring-fn (allowing 1 4)}  "6-8"))
+    (wait)))
 ;; (-main)
