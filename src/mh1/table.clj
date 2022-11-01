@@ -5,7 +5,8 @@
    [incanter.stats :refer :all]))
 
 (def ^:dynamic interesting-rows [10 20 50 100 150 200 300 400 600 800 1000])
-(def ^:dynamic format-entry #(format "%2.2f\\%%" (/ % 136928.87)))
+(defn to-percentile [x] (- 100.00 (/ x 136928.87)))
+(def ^:dynamic format-entry #(format "%.2f\\%%" %))
 
 (defn make-row [xs] (str (reduce #(str %1 " & " %2) xs) " \\\\\n"))
 
@@ -15,6 +16,15 @@
 
 (defn prepare-table [results graph-name]
   (let [maximums (map #(map (partial apply max) %) results)
-        dataa (map (fn [x] (cons x (map format-entry (quantile (nth maximums (dec x)))))) (take-while #(<= % duration) interesting-rows))]
+        format-row (fn [x] (let [row (nth maximums (dec x))
+                                 [min _ median _ max] (map to-percentile (quantile row))
+                                 row% (map to-percentile row)
+                                 cnt (count row)
+                                 pct-by #(* 100.0 (/  (count (filter % row%)) cnt))
+                                 bests (pct-by zero?)
+                                 top1% (pct-by #(>= 1 %))]
+                             (cons x (map format-entry [min median max bests top1%]))))
+        dataa (map format-row
+                   (take-while #(<= % duration) interesting-rows))]
     (template/eval textemplate {:tabela (make-table dataa)
                                 :graf graph-name})))
