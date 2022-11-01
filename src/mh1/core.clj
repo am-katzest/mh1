@@ -36,13 +36,13 @@
 (defn create-section [f] (let [results (make-up-data)
                                graph-filename (str (java.util.UUID/randomUUID) ".tmp.pdf")]
                            (graph results graph-filename)
-                           (spit (str "sprawko/" f)
-                                 (prepare-table results graph-filename))))
+                           (spit (str "sprawko/" f ".transient.tex")
+                                 (prepare-table f results graph-filename))))
 
 (def threads (atom #{}))
 
 (defmacro file& [cfg filename]
-  `(swap! threads conj (future (with-named-bindings ~cfg (create-section (str ~filename ".transient.tex"))) ~filename)))
+  `(swap! threads conj (future (with-named-bindings ~cfg (create-section ~filename)) ~filename)))
 (defn wait []
   (doseq [th @threads]
     (println @th))
@@ -113,5 +113,6 @@
       (file& {#'scoring-fn (allowing 1 2)}  "6-7")
       (file& {#'scoring-fn (allowing 1 4)}  "6-8"))
     (wait)
-    (System/exit 0)))
+    ;; (System/exit 0)
+    ))
 (-main 'i 'don't 'fucking 'care)

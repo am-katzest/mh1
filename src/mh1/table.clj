@@ -15,7 +15,7 @@
 
 (def textemplate (slurp "template.tex"))
 
-(defn prepare-table [results graph-name]
+(defn prepare-table [filename results graph-name]
   (let [maximums (map #(map (partial apply max) %) results)
         ;; ok, tutaj robimy trochę dziwną rzecz
         best-up-untils (reductions (partial map max) maximums)
@@ -30,4 +30,5 @@
         dataa (map format-row
                    (take-while #(<= % duration) interesting-rows))]
     (template/eval textemplate {:tabela (make-table dataa)
-                                :graf graph-name})))
+                                :graf graph-name
+                                :label filename})))
