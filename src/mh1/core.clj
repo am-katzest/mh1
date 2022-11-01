@@ -48,9 +48,9 @@
     (println @th))
   (println "all finished"))
 
-(defn -main []
+(defn -main [do not run me]
   (with-named-bindings
-    {#'runs 20
+    {#'runs 1
      #'population-size 200
      #'duration 400
      #'replacement-rate 30
@@ -60,59 +60,56 @@
      #'choose-cross-method  (krzyżowanie random-cross 25)}
     (println "starting")
     ;; łączenie
-    (comment
-      (with-named-bindings {}
-        (file& {#'merge-identical :łącz
-                #'scoring-fn (allowing 0.95 3)} "1-mit")
-        (file& {#'merge-identical :pozwalaj
-                #'scoring-fn (allowing 0.95 3)} "1-mif")
-        ;;
-        (with-named-bindings {#'population-size 30
-                              #'replacement-rate 5}
-          ;; mutacja
-          (file& {#'choose-cross-method (krzyżowanie random-cross 0)} "2-m0")
-          (file& {#'choose-cross-method (krzyżowanie random-cross 10)} "2-m10")
-          (file& {#'choose-cross-method (krzyżowanie random-cross 25)} "2-m25")
-          (file& {#'choose-cross-method (krzyżowanie random-cross 50)} "2-m50")
-          (file& {#'choose-cross-method (krzyżowanie random-cross 75)} "2-m75")
-          (file& {#'choose-cross-method (krzyżowanie random-cross 100)} "2-m100"))
+    (comment)
+    (with-named-bindings {#'scoring-fn (allowing 0.95 3)}
+      (file& {#'merge-identical :łącz} "1-mit")
+      (file& {#'merge-identical :pozwalaj} "1-mif")
+      ;;
+      (with-named-bindings {#'population-size 30
+                            #'replacement-rate 5}
+        ;; mutacja
+        (file& {#'choose-cross-method (krzyżowanie random-cross 0)} "2-m0")
+        (file& {#'choose-cross-method (krzyżowanie random-cross 10)} "2-m10")
+        (file& {#'choose-cross-method (krzyżowanie random-cross 25)} "2-m25")
+        (file& {#'choose-cross-method (krzyżowanie random-cross 50)} "2-m50")
+        (file& {#'choose-cross-method (krzyżowanie random-cross 75)} "2-m75")
+        (file& {#'choose-cross-method (krzyżowanie random-cross 100)} "2-m100"))
 
-        ;; wielkość populacji
-        (with-named-bindings {#'replacement-rate 20}
-          (file& {#'population-size 25} "3-25")
-          (file& {#'population-size 50} "3-50")
-          (file& {#'population-size 100} "3-100")
-          (file& {#'population-size 200} "3-200")
-          (file& {#'population-size 400} "3-400")
-          (file& {#'population-size 800} "3-800"))
-        ;; metoda selekcji
-        (with-named-bindings {}
-          (file& {#'distribution-fn ranked} "4-ranked")
-          (file& {#'distribution-fn roulette} "4-roulette1")
-          (file& {#'distribution-fn roulette
-                  #'scoring-fn (allowing-pow 1 3 5)}  "4-roulette5")
-          (file& {#'distribution-fn roulette
-                  #'scoring-fn (allowing-pow 1 3 10)} "4-roulette10")
-          (file& {#'distribution-fn roulette
-                  #'scoring-fn (allowing-pow 1 3 15)} "4-roulette15")
-          (file& {#'distribution-fn roulette
-                  #'scoring-fn (allowing-pow 1 3 20)} "4-roulette20")
-          (file& {#'distribution-fn top}
-                 "4-top"))
-        (with-named-bindings {}
-          (file& {#'choose-cross-method (krzyżowanie one-point 25)}  "5-1")
-          (file& {#'choose-cross-method (krzyżowanie two-point 25)}  "5-2")
-          (file& {#'choose-cross-method (krzyżowanie (stripe-cross 3) 25)}  "5-5")
-          (file& {#'choose-cross-method (krzyżowanie random-cross 25)}  "5-6"))))
+      ;; wielkość populacji
+      (with-named-bindings {#'replacement-rate 20}
+        (file& {#'population-size 25} "3-25")
+        (file& {#'population-size 50} "3-50")
+        (file& {#'population-size 100} "3-100")
+        (file& {#'population-size 200} "3-200")
+        (file& {#'population-size 400} "3-400")
+        (file& {#'population-size 800} "3-800"))
+      ;; metoda selekcji
+      (with-named-bindings {}
+        (file& {#'distribution-fn ranked} "4-ranked")
+        (file& {#'distribution-fn roulette} "4-roulette1")
+        (file& {#'distribution-fn roulette
+                #'scoring-fn (allowing-pow 1 3 5)}  "4-roulette5")
+        (file& {#'distribution-fn roulette
+                #'scoring-fn (allowing-pow 1 3 10)} "4-roulette10")
+        (file& {#'distribution-fn roulette
+                #'scoring-fn (allowing-pow 1 3 15)} "4-roulette15")
+        (file& {#'distribution-fn roulette
+                #'scoring-fn (allowing-pow 1 3 20)} "4-roulette20")
+        (file& {#'distribution-fn top}
+               "4-top"))
+      (with-named-bindings {}
+        (file& {#'choose-cross-method (krzyżowanie one-point 25)}  "5-1")
+        (file& {#'choose-cross-method (krzyżowanie two-point 25)}  "5-2")
+        (file& {#'choose-cross-method (krzyżowanie (stripe-cross 3) 25)}  "5-5")
+        (file& {#'choose-cross-method (krzyżowanie random-cross 25)}  "5-6")))
 
     (with-named-bindings {}
-      (comment
-        (file& {#'scoring-fn (allowing 0 3)}  "6-1")
-        (file& {#'scoring-fn (allowing 0.5 3)}  "6-2")
-        (file& {#'scoring-fn (allowing 0.9 3)}  "6-3")
-        (file& {#'scoring-fn (allowing 0.95 3)}  "6-4"))
+      (file& {#'scoring-fn (allowing 0 3)}  "6-1")
+      (file& {#'scoring-fn (allowing 0.5 3)}  "6-2")
+      (file& {#'scoring-fn (allowing 0.9 3)}  "6-3")
+      (file& {#'scoring-fn (allowing 0.95 3)}  "6-4")
       (file& {#'scoring-fn (allowing 1 3)}  "6-5")
-      ;; (file& {#'scoring-fn (allowing 1.05 3)}  "6-6")
+      (file& {#'scoring-fn (allowing 1.05 3)}  "6-6")
       (file& {#'scoring-fn (allowing 1 2)}  "6-7")
       (file& {#'scoring-fn (allowing 1 4)}  "6-8"))
     (wait)
