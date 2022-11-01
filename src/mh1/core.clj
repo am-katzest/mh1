@@ -113,6 +113,5 @@
       (file& {#'scoring-fn (allowing 1 2)}  "6-7")
       (file& {#'scoring-fn (allowing 1 4)}  "6-8"))
     (wait)
-    ;; (System/exit 0)
-    ))
-(-main)
+    (System/exit 0)))
+(-main 'i 'don't 'fucking 'care)
