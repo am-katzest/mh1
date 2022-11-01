@@ -5,6 +5,7 @@
    [incanter.stats :refer :all]))
 
 (def ^:dynamic interesting-rows [10 20 50 100 150 200 300 400 600 800 1000])
+;; (def ^:dynamic interesting-rows [10 20 50 100 150 250 300 350 400 450 500 550 600 650 700 750 800 850 900 950 1000])
 (defn to-percentile [x] (- 100.00 (/ x 136928.87)))
 (def ^:dynamic format-entry #(format "%.2f\\%%" %))
 
@@ -16,7 +17,9 @@
 
 (defn prepare-table [results graph-name]
   (let [maximums (map #(map (partial apply max) %) results)
-        format-row (fn [x] (let [row (nth maximums (dec x))
+        ;; ok, tutaj robimy trochę dziwną rzecz
+        best-up-untils (reductions (partial map max) maximums)
+        format-row (fn [x] (let [row (nth best-up-untils (dec x))
                                  [min _ median _ max] (map to-percentile (quantile row))
                                  row% (map to-percentile row)
                                  cnt (count row)

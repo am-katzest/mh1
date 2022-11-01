@@ -50,9 +50,9 @@
 
 (defn -main []
   (with-named-bindings
-    {#'runs 30 ;; 30
+    {#'runs 20
      #'population-size 200
-     #'duration 1000 ;; 1000
+     #'duration 400
      #'replacement-rate 30
      #'merge-identical :łącz
      #'scoring-fn (allowing 1 3) ;; (comp #(Math/pow % 10) (allowing 1 3))
@@ -118,4 +118,4 @@
     (wait)
     ;; (System/exit 0)
     ))
-;; (-main)
+(-main)
