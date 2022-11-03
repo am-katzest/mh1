@@ -60,7 +60,6 @@
      #'choose-cross-method  (krzyżowanie random-cross 25)}
     (println "starting")
     ;; łączenie
-
     (with-named-bindings {#'scoring-fn (allowing 0.95 3)} ; to tak musi być, żeby je się dało bezpośrednio porównać
       (file& {#'merge-identical :łącz} "1-mit")
       (file& {#'merge-identical :pozwalaj} "1-mif"))
@@ -87,17 +86,23 @@
       (file& {#'population-size  300} "3-30-300")
       (file& {#'population-size  360} "3-30-360"))
 
+    (with-named-bindings {#'replacement-rate 45}
+      (file& {#'population-size 180} "3-45-180")
+      (file& {#'population-size 225} "3-45-225")
+      (file& {#'population-size  270} "3-45-270")
+      (file& {#'population-size  315} "3-45-315"))
+
     (with-named-bindings {#'replacement-rate 15}
       (file& {#'population-size  60} "3-15-60")
       (file& {#'population-size  75} "3-15-75")
       (file& {#'population-size  90} "3-15-90")
       (file& {#'population-size  105} "3-15-105"))
 
-    (with-named-bindings {#'replacement-rate 45}
-      (file& {#'population-size 180} "3-45-180")
-      (file& {#'population-size 225} "3-45-225")
-      (file& {#'population-size  270} "3-45-270")
-      (file& {#'population-size  315} "3-45-315"))
+    (with-named-bindings {#'replacement-rate 10}
+      (file& {#'population-size  40} "3-10-40")
+      (file& {#'population-size  50} "3-10-50")
+      (file& {#'population-size  60} "3-10-60")
+      (file& {#'population-size  70} "3-10-70"))
 
     ;; metoda selekcji
     (with-named-bindings {}
@@ -124,12 +129,16 @@
     (with-named-bindings {}
       ;; funkcja przystosowania
       (file& {#'scoring-fn (allowing 0 3)}  "6-1")
-      (file& {#'scoring-fn (allowing 0.5 3)}  "6-2")
-      (file& {#'scoring-fn (allowing 0.9 3)}  "6-3")
       (file& {#'scoring-fn (allowing 0.95 3)}  "6-4")
       (file& {#'scoring-fn (allowing 1 3)}  "6-5")
       (file& {#'scoring-fn (allowing 1.05 3)}  "6-6")
       (file& {#'scoring-fn (allowing 1 2)}  "6-7")
-      (file& {#'scoring-fn (allowing 1 1)}  "6-8")) ;wtf???
-    (System/exit 0)))
-(-main 'i 'don't 'fucking 'care)
+      (file& {#'scoring-fn (allowing 1 1)}  "6-8"))
+    (file& {#'scoring-fn (allowing 1 1)
+            #'replacement-rate 10
+            #'population-size 60}  "7-1")
+    (file& {#'scoring-fn (allowing 1 1)
+            #'replacement-rate 15
+            #'population-size 90}  "7-2")))
+
+(comment (-main 'i 'don't 'fucking 'care))

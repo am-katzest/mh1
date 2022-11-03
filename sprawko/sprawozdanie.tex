@@ -16,7 +16,7 @@
 \usepackage{graphicx}
 \usepackage{float}
 \usepackage{minted}
-
+\newcommand{\cljt}[1]{\mintinline{clojure}{#1}}
 \begin{document}
 \begin{minipage}{0.35\linewidth}
 	\begin{tabular}{lr}
@@ -37,29 +37,80 @@
 \end{center}
 \bigskip \bigskip
 \section{Działanie programu}
-%\inputminted{clojure}{snippets/alg.clj_advance}
+
+\subsection{struktury danych}
+\begin{itemize}
+	\item osobnik \cljt{specimen} zawiera listę cech, wagę, wartość i flagę
+	      wyznaczającą poprawność
+	\item stan świata \cljt{state} to zbiór osobników
+\end{itemize}
+\subsection{symulacja}
+wynikiem symulacji jest lista stanów świata z poszczególnych pokoleń
+\inputminted{clojure}{snippets/alg.clj_simulate}
+\inputminted{clojure}{snippets/alg.clj_advance}
+początkowe pokolenie zawiera osobniki z cechami z równą szansą na bycie 0 i 1
+\inputminted{clojure}{snippets/alg.clj_orphan}
+%\inputminted{clojure}{snippets/alg.clj_specimen} % zbyt niski poziom
+
+\subsection{wybór}
+do zadecydowania które osobniki przetrwają lub rozmnorzą się wykorzystywana jest
+jedna z trzech funkcji; \cljt{ranked} przypisująca osobnikom szansę równą ich
+miejscu w rankingu, \cljt{roulette}, przypisująca osobnikom szansę równą ich
+przystosowaniu  albo \cljt{top} która zawsze wybiera \cljt{n} najbardziej
+przystosowanych osobników
+\inputminted{clojure}{snippets/alg.clj_top}
+\subsection{funkcja przystosowania}
+Postanowiliśmy dać szansę osobnikom, które pomimo nieznacznego przekroczenia dopuszczalnej
+wagi mają duży stosunek wartości do wagi.
+\inputminted{clojure}{snippets/alg.clj_scoring}
 \subsection{krzyżowanie}
 Funkcje krzyżujące zwracają listę funkcji dwuargumentowych, które są aplikowane
 do kolejnych wyborów krzyżowanych osobników, lista wyników tych wywołań tworzy
 genom nowego osobnika.
+\inputminted{clojure}{snippets/alg.clj_krzyżowanie}
+
 \newpage
 
 
 
-\subsection{wyniki}
-\subsubsection{łączenie}
-tutaj mamy z łączeniem \\
+\section{analiza wyników}
+\subsection{co to jest i jak to czytać}
+Osobniki które przekroczyłymaksymalną masę nie są uwzględniane w wynikach.
+\\
+Na grafach pokazany jest rozkład (pięć kwantyli) maksimów i median każdej
+symulacji, oś X reprezentuje pokolenie, a Y wartość.
+\\
+W tabelach przedstawiono rozkład przystosowania najlepszej utworzonej do danego pokolenia
+(nawet jeżeli umarła) jednostki dla poszczególnych symulacji.
+\\
+W kolumnach min, Q2 i max są odpowiednie wartości (jako procent maksimum globalnego) danych kwantyli.
+\\
+W kolumnie \%global jest procent symulacji które znalazły maksimum globalne, a
+w \%$\le$1\% jest procent symulacji które znalazły kombinację cech, z wartością w
+granicach 1\% od niej.
+
+\subsection{łączenie}
+ten parametr decyduje, czy symulacja pozwala na jednoczesne istnienie wielu
+identycznych jednostek.\\
+w symulacjach \ref{tab:1-mit} każda jednostka musi być wyjątkowa, a w
+\ref{tab:1-mif} nie. połączenie się rozkładu mediany i maksimum na wykresie
+\ref{tab:1-mif} wskazuje na dominację populacji przez identyczne jednostki
+z lokalnego maksimum. Ponieważ w \ref{tab:1-mit} wyniki są lepsze, ten wybór
+jest zastosowany przy innych próbach.
+
 \input{1-mit.transient.tex}
-a tu bez \\
 \input{1-mif.transient.tex}
-\subsubsection{prawdopodobieństwo mutacji}
+\subsection{prawdopodobieństwo mutacji}
 \input{2-m0.transient.tex}
 \input{2-m10.transient.tex}
 \input{2-m25.transient.tex}
 \input{2-m50.transient.tex}
 \input{2-m75.transient.tex}
 \input{2-m100.transient.tex}
-\subsubsection{wielkość populacji}
+\subsection{wielkość populacji}
+
+tempo wymiany=30, populacja od 60 do 360
+widzimy, że najszybszy wzrost zachodzi dla
 \input{3-30-60.transient.tex}
 \input{3-30-90.transient.tex}
 \input{3-30-120.transient.tex}
@@ -70,16 +121,25 @@ a tu bez \\
 \input{3-30-300.transient.tex}
 \input{3-30-360.transient.tex}
 
+tempo wymiany=15
 \input{3-15-60.transient.tex}
 \input{3-15-75.transient.tex}
 \input{3-15-90.transient.tex}
 \input{3-15-105.transient.tex}
 
+tempo wymiany=45
 \input{3-45-180.transient.tex}
 \input{3-45-225.transient.tex}
 \input{3-45-270.transient.tex}
 \input{3-45-315.transient.tex}
-\subsubsection{metody selekcjji}
+
+tempo wymiany=10
+\input{3-10-40.transient.tex}
+\input{3-10-50.transient.tex}
+\input{3-10-60.transient.tex}
+\input{3-10-70.transient.tex}
+
+\subsection{metody selekcjji}
 \input{4-ranked.transient.tex}
 \input{4-roulette1.transient.tex}
 \input{4-roulette5.transient.tex}
@@ -87,18 +147,19 @@ a tu bez \\
 \input{4-roulette15.transient.tex}
 \input{4-roulette20.transient.tex}
 \input{4-top.transient.tex}
-\subsubsection{metody krzyżowania}
+\subsection{metody krzyżowania}
 \input{5-1.transient.tex}
 \input{5-2.transient.tex}
 \input{5-5.transient.tex}
 \input{5-6.transient.tex}
 \subsection{funkcja przystosowania}
 \input{6-1.transient.tex}
-\input{6-2.transient.tex}
-\input{6-3.transient.tex}
 \input{6-4.transient.tex}
 \input{6-5.transient.tex}
 \input{6-6.transient.tex}
 \input{6-7.transient.tex}
 \input{6-8.transient.tex}
+\subsection{szybkośćowy}
+\input{7-1.transient.tex}
+\input{7-2.transient.tex}
 \end{document}

@@ -2,8 +2,6 @@
   (:require [mh1.data :as d]
             [mh1.utils :refer [make-wheel up-until]]))
 
-(defrecord specimen [choices weight value valid id]) ; the thing we are evolving
-
 (def ^:dynamic population-size)
 (def ^:dynamic duration)
 (def ^:dynamic replacement-rate)
@@ -15,15 +13,17 @@
 (def ^:dynamic valid? #(<= % d/max-weight))
 (def ^:dynamic good-enough? (constantly false))
 
-(defn create-specimen "tworzy osobnika na podstawie jego genomu"
+;;specimen --
+(defrecord specimen [choices weight value valid id])
+(defn create-specimen "tworzy osobnik na podstawie listy cech"
   [choices]
-  {:pre (= choices-len (count choices))}
-  ;;łączna wartość cechy względem danych
+  ;;sumuje wartość pól danych dla których cecha jest równa 1
   (let [sum-by (fn [sel] (->> choices
                               (map #(* (sel %1) %2) d/items)
                               (reduce +)))
         weight (sum-by :weight)
         value (sum-by :value)]
+    ;; wywołuje konstruktor
     (->specimen choices
                 weight
                 value
@@ -32,6 +32,7 @@
                 ;; osobniki zupełnie jednakowe są łączone
                 ;; dodanie losowej liczby temu zapobiega
                 (if (= :łącz merge-identical) :merge (rand)))))
+;; --
 
 ;; krzyżowanie --
 (let [a (fn [a & _] a)
@@ -39,7 +40,6 @@
       r #(rand-nth [a b])
       don't-flip a
       flip (comp {1 0, 0 1} a)
-      sr (fn [& _] (rand-nth [0 1]))
       rng-without-extremes #(inc (rand-int (- % 2)))]
 
   ;; aaabbbbbbb
@@ -70,25 +70,16 @@
   ;; aabbaabbaa
   ;; aaabbbaaab
   (defn stripe-cross [x]
-    (let [pattern (concat (repeat x a) (repeat x b))]
-      (->> pattern
-           cycle
-           (take choices-len)
-           constantly)))
+    (->> (concat (repeat x a) (repeat x b))
+         cycle
+         (take choices-len)
+         constantly))
 
   ;; aaaāaaaaāaa
-  (defn mutate [x]
+  (defn mutate "zmienia `n` wyborów" [n]
     (fn [] (shuffle
-            (concat (repeat x flip)
-                    (repeat (- choices-len x) don't-flip)))))
-
-  ;; āāāāāāāāāāā
-  (defn flip-all []
-    ((mutate choices-len)))
-
-  ;; 011110001100
-  (defn entirely-new []
-    (repeat choices-len sr)))
+            (concat (repeat n flip)
+                    (repeat (- choices-len n) don't-flip))))))
 ;; --
 
 (defn cross "dokonuje krzyżowania" [f a b]
@@ -98,6 +89,7 @@
     (assert (= (count ac) (count bc) (count fc)))
     (create-specimen (mapv #(%1 %2 %3) fc ac bc))))
 
+;; wybór-mutacji --
 (defn krzyżowanie [metoda prawdopodobieństwo-mutacji]
   (let [q (- 100 prawdopodobieństwo-mutacji)
         p (/ prawdopodobieństwo-mutacji 3)]
@@ -105,6 +97,7 @@
                  (mutate 3) p
                  (mutate 4) p
                  metoda q})))
+;; --
 
 (defn make-child "tworzy dziecko z populacji" [wheel]
   ;; wybieramy dwoje rodziców
@@ -126,12 +119,14 @@
        (map-indexed (fn [a b] [b (inc a)]))
        make-wheel))
 
+;; top --
 (defn top "zawsze wybiera najbardziej przystosowane osobniki" [x]
-  (let [x (sort-by scoring-fn > x)]
-    (fn [n] (take n x))))
+  (let [sorted (sort-by scoring-fn > x)]
+    (fn [n] (take n sorted))))
+;; --
 
 ;; scoring --
-(defn allowing [scale power]
+(defn allowing "ocenia jak bardzo przystosowany jest osobnik" [scale power]
   (fn  [{:keys [value valid weight]}]
     (if valid
       ;; jeżeli waga nie przekracza maksymalnej zwracamy wartość
@@ -146,7 +141,6 @@
 
 (defn allowing-pow "allowing, z wynikiem podniesionym do `power` potęgi"
   [a b power] (comp #(Math/pow % power) (allowing a b)))
-
 ;; --
 
 ;; advance --
@@ -156,14 +150,16 @@
         chooser (distribution-fn state)
         ;; wybieramy osobniki które przetrwają
         survivors (chooser  (- population-size replacement-rate))
-        ;; tworzymy dzieci
+        ;; tworzymy dzieci, każda para jest niezależna
         children (repeatedly replacement-rate #(make-child chooser))]
     ;; łączymy je
     (into survivors children)))
 ;; --
 
+;; orphan --
 (defn spawn-orphan "creates a child with no parents" []
   (create-specimen (repeatedly choices-len #(rand-int 2))))
+;; --
 
 (defn create-initial-population []
   (into #{} (repeatedly population-size spawn-orphan)))
@@ -179,7 +175,7 @@
          (take duration)
          ;; albo po znalezieniu wystarczająco dobrego rozwiązania
          (up-until good-enough?)
-         ;; sekwencja niestety musi być zrealizowana lokalnie
+         ;; realizujemy  całą sekwencję
          doall)))
 ;; --
 
