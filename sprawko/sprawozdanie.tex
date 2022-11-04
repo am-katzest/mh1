@@ -75,7 +75,7 @@ genom nowego osobnika.
 
 \section{analiza wyników}
 \subsection{co to jest i jak to czytać}
-Osobniki które przekroczyłymaksymalną masę nie są uwzględniane w wynikach.
+Osobniki które przekroczyły maksymalną masę nie są uwzględniane w wynikach.
 \\
 Na grafach pokazany jest rozkład (pięć kwantyli) maksimów i median każdej
 symulacji, oś X reprezentuje pokolenie, a Y wartość.
@@ -101,16 +101,52 @@ jest zastosowany przy innych próbach.
 \input{1-mit.transient.tex}
 \input{1-mif.transient.tex}
 \subsection{prawdopodobieństwo mutacji}
+ten parametr decyduje o względnych szansach mutacji i krzyżowania
+\\
+W symulacjach \ref{tab:2-m0} do \ref{tab:2-m100}, ze względu na dość małą przeszukiwaną
+przestrzeń i ograniczenie zaniku różnorodności genetycznej, nawet przy braku
+szansy na mutację populacja zachowuje odpowiednie geny, więc zwiększenie szansy
+na mutację ma dość negatywny wpływ.
 \input{2-m0.transient.tex}
 \input{2-m10.transient.tex}
 \input{2-m25.transient.tex}
 \input{2-m50.transient.tex}
 \input{2-m75.transient.tex}
 \input{2-m100.transient.tex}
+
+Symulacje \ref{tab:2-x0} do \ref{tab:2-x100} nie są zabezpieczone przed utratą
+różnorodności genetycznej i wykorzystany jest w nich najgorszy pod tym względem
+algorytm wybierania. W związku z tym cała populacja bardzo szybko ląduje w
+lokalnym maksimum, i przy braku mutacji (\ref{tab:2-x0}) nie wychodzi z niego. w
+pozostałych symulacjach ze względu na brak zmian w przypadku krzyżowania
+identycznych osobników, tempo ewolucji jest proporcjonalne do szansy na mutację.
+
+\input{2-x0.transient.tex}
+\input{2-x25.transient.tex}
+\input{2-x50.transient.tex}
+\input{2-x75.transient.tex}
+\input{2-x100.transient.tex}
+
+Sprawdziliśmy też wpływ ilości zmian podczas mutacji na tempo ewolucji, symulacja
+\ref{2-x100} (i wszystkie inne poza tą sekcją) ma jednakową szansa na zmianę
+dwóch, trzech lub czterech
+wyborów osobnika. W symulacjach \ref{tab:2-1100} do \ref{tab:2-4100} mutacja
+zmienia zawsze odpowiednio 1, 2, 3 lub 4 wybory, reszta parametrów jest
+identyczna z \ref{tab:2-x100}. jak widać, zmienianie jedynie jednej lub dwóch
+cech daje kiepskie wyniki (mała szansa na ulepszenie dość dobrego osobnika).
+\\
+
+\input{2-1100.transient.tex}
+\input{2-2100.transient.tex}
+\input{2-3100.transient.tex}
+\input{2-4100.transient.tex}
+
 \subsection{wielkość populacji}
 
-tempo wymiany=30, populacja od 60 do 360
-widzimy, że najszybszy wzrost zachodzi dla
+dla tempa wymiany równego 30 przeprowadzone zostały symulacje \ref{tab:3-30-60}
+do \ref{tab:3-30-360} z populacjami od 60 do 360. najlepsze wyniki osiągnęły
+symulacje w których stosunek populacji do tempa wymiany wynosił od 5 do 7
+
 \input{3-30-60.transient.tex}
 \input{3-30-90.transient.tex}
 \input{3-30-120.transient.tex}
