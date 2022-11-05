@@ -182,7 +182,7 @@
 ;; tutaj są przykłady działania niektórych funkcji
 (comment (let [a (create-specimen (repeat choices-len 0))
                b (create-specimen (repeat choices-len 1))
-               x (cross (mutate 3) a b)]
+               x (cross one-point a b)]
            (println a)
            (println b)
            (println x)
