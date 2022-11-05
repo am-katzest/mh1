@@ -43,6 +43,7 @@
 
 (defmacro file& [cfg filename]
   `(println (time (do (with-named-bindings ~cfg (create-section ~filename)) ~filename))))
+
 (defn wait []
   (doseq [th @threads]
     (println @th))
@@ -50,8 +51,8 @@
 
 (defn -main [do not run me]
   (with-named-bindings
-    {#'runs 200
-     #'population-size 200
+    {#'runs 500
+     #'population-size 150
      #'duration 400
      #'replacement-rate 30
      #'merge-identical :łącz
@@ -60,7 +61,7 @@
      #'choose-cross-method  (krzyżowanie random-cross 25)}
     (println "starting")
     ;; łączenie
-    (comment (with-named-bindings {#'scoring-fn (allowing 0.95 3)} ; to tak musi być, żeby je się dało bezpośrednio porównać
+    (comment (with-named-bindings {#'scoring-fn (allowing 0.99 2)} ; to tak musi być, żeby je się dało bezpośrednio porównać
                (file& {#'merge-identical :łącz} "1-mit")
                (file& {#'merge-identical :pozwalaj} "1-mif")))
     ;;
@@ -114,44 +115,42 @@
         (file& {#'population-size  40} "3-10-40")
         (file& {#'population-size  50} "3-10-50")
         (file& {#'population-size  60} "3-10-60")
-        (file& {#'population-size  70} "3-10-70"))
+        (file& {#'population-size  70} "3-10-70")))
 
-      ;; metoda selekcji
-      (with-named-bindings {}
-        (file& {#'distribution-fn ranked} "4-ranked")
-        (file& {#'distribution-fn roulette} "4-roulette1")
-        (file& {#'distribution-fn roulette
-                #'scoring-fn (allowing-pow 1 2 5)}  "4-roulette5")
-        (file& {#'distribution-fn roulette
-                #'scoring-fn (allowing-pow 1 2 10)} "4-roulette10")
-        (file& {#'distribution-fn roulette
-                #'scoring-fn (allowing-pow 1 2 15)} "4-roulette15")
-        (file& {#'distribution-fn roulette
-                #'scoring-fn (allowing-pow 1 2 20)} "4-roulette20")
-        (file& {#'distribution-fn top}
-               "4-top"))
+    ;; metoda selekcji
+    (with-named-bindings {}
+      (comment (file& {#'distribution-fn ranked} "4-ranked")
+               (file& {#'distribution-fn roulette} "4-roulette1")
+               (file& {#'distribution-fn top}
+                      "4-top")
+               (file& {#'distribution-fn roulette
+                       #'scoring-fn (allowing-pow 1 2 5)}  "4-roulette5")
+               (file& {#'distribution-fn roulette
+                       #'scoring-fn (allowing-pow 1 2 10)} "4-roulette10")
+               (file& {#'distribution-fn roulette
+                       #'scoring-fn (allowing-pow 1 2 15)} "4-roulette15")
+               (file& {#'distribution-fn roulette
+                       #'scoring-fn (allowing-pow 1 2 20)} "4-roulette20"))
+      (file& {#'distribution-fn roulette
+              #'scoring-fn (allowing-pow 1 2 25)} "4-roulette25")
+      (file& {#'distribution-fn roulette
+              #'scoring-fn (allowing-pow 1 2 30)} "4-roulette30"))
 
-      (with-named-bindings {}
-        ;;  metody krzyżowania
-        (file& {#'choose-cross-method (krzyżowanie one-point 25)}  "5-1")
-        (file& {#'choose-cross-method (krzyżowanie two-point 25)}  "5-2")
-        (file& {#'choose-cross-method (krzyżowanie (stripe-cross 3) 25)}  "5-5")
-        (file& {#'choose-cross-method (krzyżowanie random-cross 25)}  "5-6"))
+    (comment (with-named-bindings {}
+               ;;  metody krzyżowania
+               (file& {#'choose-cross-method (krzyżowanie one-point 25)}  "5-1")
+               (file& {#'choose-cross-method (krzyżowanie two-point 25)}  "5-2")
+               (file& {#'choose-cross-method (krzyżowanie (stripe-cross 3) 25)}  "5-5")
+               (file& {#'choose-cross-method (krzyżowanie random-cross 25)}  "5-6"))
 
-      (with-named-bindings {}
-        ;; funkcja przystosowania
-        (file& {#'scoring-fn (allowing 0 3)}  "6-1")
-        (file& {#'scoring-fn (allowing 0.95 3)}  "6-4")
-        (file& {#'scoring-fn (allowing 1 3)}  "6-5")
-        (file& {#'scoring-fn (allowing 1.05 3)}  "6-6")
-        (file& {#'scoring-fn (allowing 1 2)}  "6-7")
-        (file& {#'scoring-fn (allowing 1 1)}  "6-8"))
-      (file& {#'scoring-fn (allowing 1 1)
-              #'replacement-rate 10
-              #'population-size 60}  "7-1")
-      (file& {#'scoring-fn (allowing 1 1)
-              #'replacement-rate 15
-              #'population-size 90}  "7-2")))
+             (with-named-bindings {}
+               ;; funkcja przystosowania
+               (file& {#'scoring-fn (allowing 0 3)}  "6-1")
+               (file& {#'scoring-fn (allowing 0.95 3)}  "6-4")
+               (file& {#'scoring-fn (allowing 1 3)}  "6-5")
+               (file& {#'scoring-fn (allowing 1.05 3)}  "6-6")
+               (file& {#'scoring-fn (allowing 1 2)}  "6-7")
+               (file& {#'scoring-fn (allowing 1 1)}  "6-8"))))
   (println "finished"))
 
 (comment (-main 'i 'don't 'fucking 'care))

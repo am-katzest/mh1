@@ -23,3 +23,9 @@ pom.xml.asc
 /sprawko/sprawozdanie.prv/
 /sprawko/sprawozdanie.synctex.gz
 *.transient.tex
+*.bak*
+bak*
+*.nav
+*.toc
+*.out
+*.snm

@@ -1,25 +1,19 @@
 \begin{table}[H]
-	\begin{minipage}{0.5\textwidth}
-		\resizebox{\textwidth}{!}{
-			\begin{tabular}{c|c|c|c|c|c}
-				{Pokolenie} & min & Q2 & max & \%global & \%$\leq$1\% \\
-				\hline
-				<%= tabela %>
-			\end{tabular}
-		}
-		\caption{rozkład maksimum względem pokolenia, dane:
-			populacja=<%= population-size %>,
-			tempo wymiany=<%= replacement-rate %>,
-			ilość uruchomień=<%= runs %>,
-			długość=<%= duration %>,
-			duplikaty=<%= (name merge-identical) %>,
-			funkcja dopasowania=<%= (pretty scoring-fn) %>,
-			algorytm wybierania=<%= (pretty distribution-fn) %>,
-			prawdopodobieństwo mutacji=<%= (pretty choose-cross-method) %>
-		}
-		\label{tab:<%= label%>}
-	\end{minipage}
-	\begin{minipage}{0.5\textwidth}
-		\includegraphics[width=\textwidth]{<%= graf %>}
-	\end{minipage}
+	\begin{tabular}{c|c|c|c|c|c}
+		{Pokolenie} & min & Q2 & max & \%global & \%$\leq$1\% \\
+		\hline
+		<%= tabela %>
+	\end{tabular}
+	\caption{rozkład maksimum względem pokolenia, dane:
+		populacja=<%= population-size %>,
+		tempo wymiany=<%= replacement-rate %>,
+		ilość uruchomień=<%= runs %>,
+		długość=<%= duration %>,
+		duplikaty=<%= (name merge-identical) %>,
+		funkcja dopasowania=<%= (pretty scoring-fn) %>,
+		algorytm wybierania=<%= (pretty distribution-fn) %>,
+		prawdopodobieństwo mutacji=<%= (pretty choose-cross-method) %>
+	}
+	\label{tab:<%= label%>}
+	\includegraphics[width=\textwidth]{<%= graf %>}
 \end{table}

@@ -15,8 +15,10 @@
 \usepackage{tabularx}
 \usepackage{graphicx}
 \usepackage{float}
+\usepackage{hyperref}
 \usepackage{minted}
 \newcommand{\cljt}[1]{\mintinline{clojure}{#1}}
+\newcommand{\inputgraph}[1]{\newpage \input{#1}\newpage} % p, n w przeglądarce ^w^
 \begin{document}
 \begin{minipage}{0.35\linewidth}
 	\begin{tabular}{lr}
@@ -62,14 +64,13 @@ przystosowanych osobników
 \subsection{funkcja przystosowania}
 Postanowiliśmy dać szansę osobnikom, które pomimo nieznacznego przekroczenia dopuszczalnej
 wagi mają duży stosunek wartości do wagi.
+\href{https://www.desmos.com/calculator/gikud1m6v8}{link do desmosu}
 \inputminted{clojure}{snippets/alg.clj_scoring}
 \subsection{krzyżowanie}
 Funkcje krzyżujące zwracają listę funkcji dwuargumentowych, które są aplikowane
 do kolejnych wyborów krzyżowanych osobników, lista wyników tych wywołań tworzy
 genom nowego osobnika.
 \inputminted{clojure}{snippets/alg.clj_krzyżowanie}
-
-\newpage
 
 
 
@@ -80,10 +81,14 @@ Osobniki które przekroczyły maksymalną masę nie są uwzględniane w wynikach
 Na grafach pokazany jest rozkład (pięć kwantyli) maksimów i median każdej
 symulacji, oś X reprezentuje pokolenie, a Y wartość.
 \\
+Nie popierając tego niczym, poza kilkoma tysiącami prób które nie znalazły
+lepszego, że globalne maksimum wynosi 13692887.
+\\
 W tabelach przedstawiono rozkład przystosowania najlepszej utworzonej do danego pokolenia
 (nawet jeżeli umarła) jednostki dla poszczególnych symulacji.
 \\
-W kolumnach min, Q2 i max są odpowiednie wartości (jako procent maksimum globalnego) danych kwantyli.
+W kolumnach min, Q2 i max są odpowiednie wartości (jako procent maksimum
+globalnego) danych kwantyli.
 \\
 W kolumnie \%global jest procent symulacji które znalazły maksimum globalne, a
 w \%$\le$1\% jest procent symulacji które znalazły kombinację cech, z wartością w
@@ -98,8 +103,8 @@ w symulacjach \ref{tab:1-mit} każda jednostka musi być wyjątkowa, a w
 z lokalnego maksimum. Ponieważ w \ref{tab:1-mit} wyniki są lepsze, ten wybór
 jest zastosowany przy innych próbach.
 
-\input{1-mit.transient.tex}
-\input{1-mif.transient.tex}
+\inputgraph{1-mit.transient.tex}
+\inputgraph{1-mif.transient.tex}
 \subsection{prawdopodobieństwo mutacji}
 ten parametr decyduje o względnych szansach mutacji i krzyżowania
 \\
@@ -107,12 +112,12 @@ W symulacjach \ref{tab:2-m0} do \ref{tab:2-m100}, ze względu na dość małą p
 przestrzeń i ograniczenie zaniku różnorodności genetycznej, nawet przy braku
 szansy na mutację populacja zachowuje odpowiednie geny, więc zwiększenie szansy
 na mutację ma dość negatywny wpływ.
-\input{2-m0.transient.tex}
-\input{2-m10.transient.tex}
-\input{2-m25.transient.tex}
-\input{2-m50.transient.tex}
-\input{2-m75.transient.tex}
-\input{2-m100.transient.tex}
+\inputgraph{2-m0.transient.tex}
+\inputgraph{2-m10.transient.tex}
+\inputgraph{2-m25.transient.tex}
+\inputgraph{2-m50.transient.tex}
+\inputgraph{2-m75.transient.tex}
+\inputgraph{2-m100.transient.tex}
 
 Symulacje \ref{tab:2-x0} do \ref{tab:2-x100} nie są zabezpieczone przed utratą
 różnorodności genetycznej i wykorzystany jest w nich najgorszy pod tym względem
@@ -121,11 +126,11 @@ lokalnym maksimum, i przy braku mutacji (\ref{tab:2-x0}) nie wychodzi z niego. w
 pozostałych symulacjach ze względu na brak zmian w przypadku krzyżowania
 identycznych osobników, tempo ewolucji jest proporcjonalne do szansy na mutację.
 
-\input{2-x0.transient.tex}
-\input{2-x25.transient.tex}
-\input{2-x50.transient.tex}
-\input{2-x75.transient.tex}
-\input{2-x100.transient.tex}
+\inputgraph{2-x0.transient.tex}
+\inputgraph{2-x25.transient.tex}
+\inputgraph{2-x50.transient.tex}
+\inputgraph{2-x75.transient.tex}
+\inputgraph{2-x100.transient.tex}
 
 Sprawdziliśmy też wpływ ilości zmian podczas mutacji na tempo ewolucji, symulacja
 \ref{2-x100} (i wszystkie inne poza tą sekcją) ma jednakową szansa na zmianę
@@ -136,66 +141,113 @@ identyczna z \ref{tab:2-x100}. jak widać, zmienianie jedynie jednej lub dwóch
 cech daje kiepskie wyniki (mała szansa na ulepszenie dość dobrego osobnika).
 \\
 
-\input{2-1100.transient.tex}
-\input{2-2100.transient.tex}
-\input{2-3100.transient.tex}
-\input{2-4100.transient.tex}
+\inputgraph{2-1100.transient.tex}
+\inputgraph{2-2100.transient.tex}
+\inputgraph{2-3100.transient.tex}
+\inputgraph{2-4100.transient.tex}
 
 \subsection{wielkość populacji}
+najlepsze wyniki osiągnęły symulacje w których stosunek populacji do tempa wymiany wynosił od 4 do 6,
+niższe populacje są mało stabilne, a większe jedynie spowalniają proces.
+% Stosunek nie wydaje się być liniowy, ale mamy za mało danych żeby to potwierdzić
+\\
 
-dla tempa wymiany równego 30 przeprowadzone zostały symulacje \ref{tab:3-30-60}
-do \ref{tab:3-30-360} z populacjami od 60 do 360. najlepsze wyniki osiągnęły
-symulacje w których stosunek populacji do tempa wymiany wynosił od 5 do 7
+Dla tempa wymiany równego 45 przeprowadzone zostały symulacje \ref{tab:3-45-180}
+do \ref{tab:3-45-315}.
 
-\input{3-30-60.transient.tex}
-\input{3-30-90.transient.tex}
-\input{3-30-120.transient.tex}
-\input{3-30-150.transient.tex}
-\input{3-30-180.transient.tex}
-\input{3-30-210.transient.tex}
-\input{3-30-240.transient.tex}
-\input{3-30-300.transient.tex}
-\input{3-30-360.transient.tex}
+\inputgraph{3-45-180.transient.tex}
+\inputgraph{3-45-225.transient.tex}
+\inputgraph{3-45-270.transient.tex}
+\inputgraph{3-45-315.transient.tex}
 
-tempo wymiany=15
-\input{3-15-60.transient.tex}
-\input{3-15-75.transient.tex}
-\input{3-15-90.transient.tex}
-\input{3-15-105.transient.tex}
+Dla tempa wymiany równego 30 przeprowadzone zostały symulacje \ref{tab:3-30-60}
+do \ref{tab:3-30-360} z populacjami od 60 do 360.
 
-tempo wymiany=45
-\input{3-45-180.transient.tex}
-\input{3-45-225.transient.tex}
-\input{3-45-270.transient.tex}
-\input{3-45-315.transient.tex}
+\inputgraph{3-30-60.transient.tex}
+\inputgraph{3-30-90.transient.tex}
+\inputgraph{3-30-120.transient.tex}
+\inputgraph{3-30-150.transient.tex}
+\inputgraph{3-30-180.transient.tex}
+\inputgraph{3-30-210.transient.tex}
+\inputgraph{3-30-240.transient.tex}
+\inputgraph{3-30-300.transient.tex}
+\inputgraph{3-30-360.transient.tex}
 
-tempo wymiany=10
-\input{3-10-40.transient.tex}
-\input{3-10-50.transient.tex}
-\input{3-10-60.transient.tex}
-\input{3-10-70.transient.tex}
+Dla tempa wymiany równego 15 przeprowadzone zostały symulacje \ref{tab:3-15-60}
+do \ref{tab:3-15-105}.
 
-\subsection{metody selekcjji}
-\input{4-ranked.transient.tex}
-\input{4-roulette1.transient.tex}
-\input{4-roulette5.transient.tex}
-\input{4-roulette10.transient.tex}
-\input{4-roulette15.transient.tex}
-\input{4-roulette20.transient.tex}
-\input{4-top.transient.tex}
+\inputgraph{3-15-60.transient.tex}
+\inputgraph{3-15-75.transient.tex}
+\inputgraph{3-15-90.transient.tex}
+\inputgraph{3-15-105.transient.tex}
+
+Dla tempa wymiany równego 10 przeprowadzone zostały symulacje \ref{tab:3-10-40}
+do \ref{tab:3-10-70}.
+
+\inputgraph{3-10-40.transient.tex}
+\inputgraph{3-10-50.transient.tex}
+\inputgraph{3-10-60.transient.tex}
+\inputgraph{3-10-70.transient.tex}
+
+\subsection{metody selekcji}
+Metoda wybierania które osobniki rozmnożą się i które przeżyją.
+w symulacji \ref{tab:4-ranked} użyta jest metoda rankingowa, w symulacjach
+\ref{tab:4-roulette1} do \ref{tab:4-roulette20} każdemu osobnikowi przypisywany
+jest wycinek koła odpowiadający jego przystosowaniu, jednak ze względu na dość
+małe różnice pomiędzy poszczególnymi osobnikami nie przynosiło to zbyt dobrych
+wyników w symulacji \ref{tab:4-roulette1}, dlatego w symulacjach
+\ref{tab:4-roulette5} do \ref{tab:4-roulette20} przystosowanie jednostki zostało
+podniesione do 5, 10, 15 i 20 potęgi. w symulacji \ref{tab:4-top} funkcja wyboru
+zawsze zwraca najbardziej przystosowane jednostki.
+
+\inputgraph{4-ranked.transient.tex}
+\inputgraph{4-roulette1.transient.tex}
+\inputgraph{4-roulette5.transient.tex}
+\inputgraph{4-roulette10.transient.tex}
+\inputgraph{4-roulette15.transient.tex}
+\inputgraph{4-roulette20.transient.tex}
+\inputgraph{4-roulette25.transient.tex}
+\inputgraph{4-roulette30.transient.tex}
+\inputgraph{4-top.transient.tex}
+
 \subsection{metody krzyżowania}
-\input{5-1.transient.tex}
-\input{5-2.transient.tex}
-\input{5-5.transient.tex}
-\input{5-6.transient.tex}
+w symulacjach \ref{tab:5-5} do \ref{tab:5-6} porównaliśmy wpływ metody
+krzyżowania na wyniki. Nieprzewidywalność krzyżowania wydaje się pozytywnie
+wpływać na wyniki dla przykładowego zestawu danych.
+\begin{itemize}
+	\item \cljt{stripe-cross} \ref{tab:5-5} --- wybiera zawsze ten sam zestaw cech z jednego osobnika
+	\item \cljt{one-point} \ref{tab:5-1} -- jest spora korelacja wśród poszczególnych cech
+	\item \cljt{two-point} \ref{tab:5-2} -- korelacja jest mniejsza
+	\item \cljt{random-cross} \ref{tab:5-6} -- dla każdej cechy rodzic źródłowy jest losowany
+	      oddzielnie; brak korelacji
+\end{itemize}
+
+\inputgraph{5-5.transient.tex}
+\inputgraph{5-1.transient.tex}
+\inputgraph{5-2.transient.tex}
+\inputgraph{5-6.transient.tex}
 \subsection{funkcja przystosowania}
-\input{6-1.transient.tex}
-\input{6-4.transient.tex}
-\input{6-5.transient.tex}
-\input{6-6.transient.tex}
-\input{6-7.transient.tex}
-\input{6-8.transient.tex}
-\subsection{szybkośćowy}
-\input{7-1.transient.tex}
-\input{7-2.transient.tex}
+symulacje \ref{tab:6-1} do \ref{tab:6-8} przedstawiają różnice w wynikach
+spowodowane różnymi funkcjami przystosowania. \\
+Wszystkie zaimplementowane funkcje przyznają osobnikom które nie przekroczyły maksymalnej wagi
+punkty równe ich wartości, różnią się jedynie zachowaniem dla osobników o zbyt
+dużej wadze.
+Symulacja \ref{tab:6-1} ocenia je na 0, symulacje \ref{tab:6-4} do \ref{tab:6-6} dzielą ich wynik przez trzecią potęgę stosunku
+nadwagi do wagi maksymalnej i mnożą przez odpowiednio 0.95, 1 i 1.05.
+Wyniki symulacji \ref{tab:6-6} są dziwne ponieważ dawany w niej był priorytet
+osobnikom przekraczającym maksymalną wagę w związku z tym znaczna część
+populacji była niepoprawna. Wśród nich najlepsze wyniki
+zwróciła symulacja \ref{tab:6-5} która nie dawała preferencji osobnikom po
+żadnej stronie. w symulacjach \ref{tab:6-7}, \ref{tab:6-8} podobnie jak
+\ref{tab:6-5} osobniki przekraczające maksymalną masę nie mają skalowanej
+punktacji, jednak został zredukowana szybkość spadku punktów z powodu przekroczenia
+granicy, w \ref{tab:6-8} powyżej maksymalnej wartości punktacja zależy jedynie
+od stosunku wartości do wagi. Wysoką medianę można wyjaśnić przez niepoprawność
+znacznej części populacji.
+\inputgraph{6-1.transient.tex}
+\inputgraph{6-4.transient.tex}
+\inputgraph{6-5.transient.tex}
+\inputgraph{6-6.transient.tex}
+\inputgraph{6-7.transient.tex}
+\inputgraph{6-8.transient.tex}
 \end{document}
