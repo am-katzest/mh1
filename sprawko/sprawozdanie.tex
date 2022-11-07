@@ -81,8 +81,8 @@ Osobniki które przekroczyły maksymalną masę nie są uwzględniane w wynikach
 Na grafach pokazany jest rozkład (pięć kwantyli) maksimów i median każdej
 symulacji, oś X reprezentuje pokolenie, a Y wartość.
 \\
-Nie popierając tego niczym, poza kilkoma tysiącami prób które nie znalazły
-lepszego, że globalne maksimum wynosi 13692887.
+Nie popierając tego niczym, poza kilkoma tysiącami symulacji które nie znalazły
+lepszego, zakładamy, że globalne maksimum wynosi 13692887.
 \\
 W tabelach przedstawiono rozkład przystosowania najlepszej utworzonej do danego pokolenia
 (nawet jeżeli umarła) jednostki dla poszczególnych symulacji.
@@ -231,19 +231,20 @@ symulacje \ref{tab:6-1} do \ref{tab:6-11} przedstawiają różnice w wynikach
 spowodowane różnymi funkcjami przystosowania. \\
 Wszystkie zaimplementowane funkcje przyznają osobnikom które nie przekroczyły maksymalnej wagi
 punkty równe ich wartości, różnią się jedynie zachowaniem dla osobników o zbyt
-dużej wadze.
+dużej wadze. \\
 Symulacja \ref{tab:6-1} ocenia je na 0, symulacje \ref{tab:6-4} do \ref{tab:6-6} dzielą ich wynik przez trzecią potęgę stosunku
-nadwagi do wagi maksymalnej i mnożą przez odpowiednio 0.95, 1 i 1.05.
+nadwagi do wagi maksymalnej i mnożą przez odpowiednio 0.95, 1 i 1.05. \\
 Wyniki symulacji \ref{tab:6-6} są dziwne ponieważ dawany w niej był priorytet
 osobnikom przekraczającym maksymalną wagę w związku z tym znaczna część
-populacji była niepoprawna. Wśród nich najlepsze wyniki
-zwróciła symulacja \ref{tab:6-5} która nie dawała preferencji osobnikom po
-żadnej stronie. w symulacjach \ref{tab:6-7}, \ref{tab:6-11} podobnie jak
+populacji była niepoprawna.  Wśród nich najlepsze wyniki zwróciła symulacja
+\ref{tab:6-5}
+która nie dawała preferencji osobnikom po żadnej stronie maksymalnej wagi. \\
+W symulacjach \ref{tab:6-7}, \ref{tab:6-11} podobnie jak
 \ref{tab:6-5} osobniki przekraczające maksymalną masę nie mają skalowanej
 punktacji, jednak został zredukowana szybkość spadku punktów z powodu przekroczenia
 granicy, w \ref{tab:6-11} powyżej maksymalnej wartości punktacja zależy jedynie
 od stosunku wartości do wagi. Wysoką medianę można wyjaśnić przez niepoprawność
-znacznej części populacji.
+znacznej części populacji. \\
 \inputgraph{6-1.transient.tex}
 \inputgraph{6-4.transient.tex}
 \inputgraph{6-5.transient.tex}
